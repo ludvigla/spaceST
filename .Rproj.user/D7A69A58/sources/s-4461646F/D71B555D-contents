@@ -1,0 +1,83 @@
+library(spaceST)
+
+df1 <- t(read.table("~/Desktop/Mickan/5_CN74_E1.tsv"))
+df2 <- t(read.table("~/Desktop/Mickan/6_CN74_E2.tsv"))
+
+exp.list <- list(df1, df2)
+# Convert ENSEMBL ids
+exp.list <- ensembl2hgnc(df = exp.list)
+# Covnert headers
+exp.list[[1]] <- convert_coordinates_from_json(exp.list[[1]], rep = 1)
+exp.list[[2]] <- convert_coordinates_from_json(exp.list[[2]], rep = 2)
+
+space.object <- CreatespaceSTobject(exp.list)
+space.object
+
+plot.QC.spaceST(space.object, separate = T)
+pca.spaceST(space.object, ncomponents = 3)
+
+st.topics <- topic_compute(df = space.object@expr, return.lda = T)
+omega <- st.topics$omega
+
+topics.list <- cast2list(t(omega))
+
+topic_heatmap(st.topics, minClusterSize = 20)
+clusters <- topic_clusters(omega, minClusterSize = 20)
+
+coords <- get_coordinates(space.object@expr)
+spatial.clusters(clusters = clusters[coords$replicate == 1],
+                 coords = coords[coords$replicate == 1, 2:3],
+                 HE = "~/Desktop/Mickan/FH6w_CN74_E1_HE_vsmall.jpg")
+
+scatter <- scatter_HE(img = "~/Desktop/Mickan/FH6w_CN74_E1_HE_vsmall.jpg", show.plot = T)
+raster <- rasterize_scatter(scatter = scatter, coords = coords[coords$replicate == 1, 2:3])
+spatial.heatmap(x = topics.list[[1]][4, ], coords = coords[coords$replicate == 1, 2:3],
+                raster = raster,
+                HE = "~/Desktop/Mickan/FH6w_CN74_E1_HE_vsmall.jpg", size = 0.05)
+
+spatial.clusters(clusters = clusters[coords$replicate == 2],
+                 coords = coords[coords$replicate == 2, 2:3],
+                 HE = "~/Desktop/Mickan/FH6w_CN74_E2_HE_vsmall.jpg")
+
+scatter <- scatter_HE(img = "~/Desktop/Mickan/FH6w_CN74_E2_HE_vsmall.jpg", show.plot = T)
+raster <- rasterize_scatter(scatter = scatter, coords = coords[coords$replicate == 2, 2:3])
+spatial.heatmap(x = topics.list[[2]][1, ], coords = coords[coords$replicate == 2, 2:3],
+                raster = raster,
+                HE = "~/Desktop/Mickan/FH6w_CN74_E2_HE_vsmall.jpg")
+
+save(topics.list, file = "~/Desktop/Mickan/topics.list")
+
+cols <- c("royalblue3", "mediumpurple4", "navajowhite2", "chocolate", "firebrick", "yellow2"," aquamarine", "orange1", "olivedrab2", "darkgreen", "pink", "black", "navy", "khaki3", "lightsteelblue1")
+
+set.seed(1)
+perplexity.1 = 15
+out.tsne = Rtsne(as.matrix(omega),
+                 dims = 2,
+                 initial_dims = 50,
+                 theta = 0.0,
+                 check_duplicates = FALSE,
+                 pca = TRUE,
+                 perplexity = perplexity.1,
+                 max_iter = 1000,
+                 verbose = F)
+gg.df <- data.frame(x = out.tsne$Y[,1], y = out.tsne$Y[,2], clusters = clusters)
+ggplot(gg.df, aes(x = x, y = y, colour = factor(clusters))) +
+  geom_point() +
+  scale_color_manual(values = cols) +
+  theme(panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        panel.border = element_rect(colour = "black", fill=NA, size=1)) +
+  labs(colour = "cluster", title = paste("t-SNE of GoM results", sep = ""))
+
+res <- interpolate_2D_data(val.df = topics.list[[1]], section.input = raster, x = 64, y = 84)
+res2 <- res[sample(x = 1:nrow(res), size = 10000), ]
+res2[is.na(res2)] <- 0
+ggplot(res2, aes(x, 35 - y, z = val, fill = val)) +
+  geom_density_2d()
+
+t1 <- t(topics.list[[1]])
+colnames(t1) <- paste("topic", colnames(t1), sep = "")
+df <- cbind(clusters = clusters[coords$replicate == 1], t1)
+svm <- ksvm(clusters ~ topic1+topic2+topic3+topic4, data=df)

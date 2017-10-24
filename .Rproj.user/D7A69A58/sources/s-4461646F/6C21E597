@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1508829016983.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "6C21E597",
+    "lastKnownWriteTime" : 1508790581,
+    "last_content_update" : 1508790581,
+    "path" : "~/breast_cancer/spaceST/R/SNN.R",
+    "project_path" : "R/SNN.R",
+    "properties" : {
+        "cursorPosition" : "58,41",
+        "scrollLine" : "29",
+        "tempName" : "Untitled2"
+    },
+    "relative_order" : 7,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

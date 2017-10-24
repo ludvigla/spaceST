@@ -1,0 +1,183 @@
+#' The spaceST class
+#'
+#' @description An S4 class object used to filter and store spatial transcriptomics data from
+#' multiple tissue sections
+#' @slot raw.data Raw input data
+#' @slot expr A data.frame with filtered gene expression data
+#' @slot corrected A data.frame with batch corrected gene expressiond data
+#' @slot topics Topic matrix obtained using compute.lda() function from cellTree
+#' @slot coordinates A data.frame to represent feature coordinates in the expression dataset
+#' @slot filter.settings A list with settings used for filtering
+#' @slot statistics A list with a data.frame and plot object for quality control
+#'
+#' @name spaceST
+#' @rdname spaceST
+#' @aliases spaceST-class
+#' @exportClass spaceST
+
+spaceST <- setClass(
+  "spaceST",
+  slots = c(
+    raw.data = "ANY",
+    expr = "data.frame",
+    corrected = "data.frame",
+    topics = "matrix",
+    clusters = "integer",
+    tsne = "matrix",
+    snn = "ANY",
+    coordinates = "data.frame",
+    filter.settings = "list",
+    meta.data = "list",
+    version = "ANY"
+  )
+)
+
+#' show method for spaceST
+#'
+#' @param object A spaceST object
+#' @name show
+#' @aliases show,spaceST-method
+#' @docType methods
+#' @rdname show-methods
+#'
+setMethod("show", signature = "spaceST", definition = function(object) {
+    cat("An object of class ", class(object), "\n\n", sep = "")
+    cat("Filter settings:\n")
+    cat("  Filtered features with less than ", object@filter.settings[[1]], " unique genes \n", sep = "")
+    cat("  Filtered genes with expression values =< ", object@filter.settings[[2]], " in =< ", object@filter.settings[[3]],
+        " features\n\n", sep = "")
+    cat("Summary statistics of")
+    if (length(object@corrected) > 0) {
+      cat(" corrected data: \n")
+      print(summary(ST_statistics(object@corrected[, 1:2])[, 1:2]))
+    } else {
+      cat(" filtered data: \n")
+      print(summary(ST_statistics(object@expr[, 1:2])[, 1:2]))
+    }
+    if (length(object@topics) > 0) {
+      cat("\nLDA results:\n")
+      cat("  Selected ", ncol(object@topics), " topics from a ", ncol(object@expr), " 'document' collection\n", sep = "")
+      tab <- table(object@meta.data$clusters)
+      tab <- paste("  ", names(tab), tab, sep = "\t\t")
+      cat("\tcluster:\tnumber of features:\n")
+      cat(tab, sep = "\n")
+      cat("  Distance method used for clustering:\t", object@meta.data$dist.method, "\n", sep = "")
+      cat("  Tree method used for clustering:\t", object@meta.data$tree.method, "\n", sep = "")
+      cat("  Minimum cluster size:\t\t\t", object@meta.data$minClusterSize, sep = "")
+    }
+})
+
+#' Batch correction of spaceST data
+#'
+#' @param object spaceST object with expression data to correct
+#' @return Batch corrected data frame in slot corrected
+#' @export
+setGeneric(
+  name = "batch.correct",
+  def = function(object) standardGeneric("batch.correct")
+)
+#' @export
+setMethod(
+  f = "batch.correct",
+  signature = "spaceST",
+  definition = function(object) {
+    if (class(object) != "spaceST"){
+      stop("Wrong input format.")
+    }
+    object@corrected <- as.data.frame(t(CountClust::BatchCorrectedCounts(t(object@expr), object@coordinates[, 1], use_parallel = T)))
+    return(object)
+  }
+)
+
+#' Normalize ST data
+#'
+#' @param object spaceST object with expression data to correct
+#' @param method select normalization method [default "cp10k"]. Curently only sp10k available
+#' @param log2 Logical specifying whether or not data should be log2-transformed
+#' @return Normalized data frame in slot normalized
+setGeneric(name = "normalize",
+           def = function(object,
+                          method = "cp10k",
+                          log2 = F) standardGeneric("normalize"))
+#' @export
+setMethod(
+  f = "normalize",
+  signature = "spaceST",
+  definition = function(object,
+                        method = "cp10k",
+                        log2 = F) {
+  if (class(object) != "spaceST"){
+    stop("Wrong input format.")
+  }
+  if (length(object@corrected) > 0){
+    norm.data <- object@corrected
+  } else {
+    norm.data <- object@expr
+  }
+  object@normalized <- calc_cpm(norm.data)
+  return(object)
+  }
+)
+
+#' Plot pca of spaceST data
+#'
+#' @description This function is used to plot the first two principal components of expression data
+#' stored in a spaceST object. By default, both raw expression and batch corrected exåression
+#' data will be plotted if both are present.
+#' @param object spaceST object with expression data
+#' @return Plot of the first two principal components of expression data.
+#' @examples
+#' library(STanalysis3D)
+#' data(bcST)
+#'
+#' # Create spaceST object from gene expression data
+#' ST.object <- CreatespaceSTobject(bcST)
+#' # Plot PCA
+#' pca.spaceST(ST.object)
+#'
+#' # Or if batch corrected, `pca.spaceST()` will plot a comparison between raw and corrected PCA.
+#' ST.oject <- batch.correct(ST.object)
+#' pca.spaceST(ST.object)
+#' @export
+setGeneric("pca.spaceST", function(object, ...) standardGeneric("pca.spaceST"))
+#' @export
+setMethod("pca.spaceST", "spaceST", function(object, ...) {
+  if (class(object) != "spaceST") {
+    stop("Wrong input format")
+  }
+  if (length(object@corrected) == 0) {
+    pca_plot(df1 = object@expr, df2 = NULL, samples = object@coordinates[, 1], ...)
+  } else {
+    pca_plot(object@expr, object@corrected, object@coordinates[, 1], ...)
+  }
+})
+
+#' Plot unique genes per feature and transcripts per feature
+#'
+#' @description This funciton is used to plot the unique genes per feature and transcipts per feature
+#' distributions as histograms. By default, the function will take the batch corrected dataset
+#' if present.
+#' @param object spaceST object with expression data.
+#' @param dataset Character string specifying if the "corrected" or "raw" data should be used as input. Default
+#' is set to "corrected".
+#' @return Histograms of unique genes per feature and transcripts per feature distributions.
+#' @export
+setGeneric("plot.QC.spaceST", function(object, dataset = "corrected", separate = F) standardGeneric("plot.QC.spaceST"))
+#' @export
+setMethod("plot.QC.spaceST", "spaceST", function(object, dataset = "corrected", separate = F) {
+  if (class(object) != "spaceST") {
+    stop("Wrong input format")
+  }
+  if (length(object@corrected) == 0) {
+    df1 <- ST_statistics(object@expr)
+    ST_statistics.plot(df1, separate)
+  }
+  if (dataset == "corrected" & length(object@corrected) > 0) {
+    df1 <- ST_statistics(object@corrected)
+    ST_statistics.plot(df1, separate)
+  }
+  if (dataset == "raw") {
+    df1 <- ST_statistics(object@expr)
+    ST_statistics.plot(df1, separate)
+  }
+})

@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1508790816675.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "8D489DAF",
+    "lastKnownWriteTime" : 1508829570,
+    "last_content_update" : 1508829570832,
+    "path" : "~/breast_cancer/spaceST/R/3D_tools.R",
+    "project_path" : "R/3D_tools.R",
+    "properties" : {
+        "cursorPosition" : "382,0",
+        "scrollLine" : "360"
+    },
+    "relative_order" : 5,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
