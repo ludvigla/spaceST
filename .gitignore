@@ -3,5 +3,6 @@
 .Rhistory
 .Rproj.user
 .RData
-inst/doc
+.DS_store
+
 
