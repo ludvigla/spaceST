@@ -4,13 +4,23 @@
 \alias{RunModularityClusteringspaceST}
 \title{Runs the modularity optimizer java program (ModularityOptimizer.jar)}
 \usage{
-RunModularityClusteringspaceST(SNN = NULL, modularity = 1,
-  resolution = 0.8, algorithm = 1, n.start = 100, n.iter = 10,
+RunModularityClusteringspaceST(SNN = NULL, set.modularity = 1,
+  set.resolution = 0.8, set.algorithm = 1, n.start = 100, n.iter = 10,
   random.seed = 0, print.output = FALSE, temp.file.location = NULL)
 }
 \arguments{
 \item{SNN}{SNN              matrix to use as input for the clustering
 algorithms}
+
+\item{n.start}{Number of random starts.}
+
+\item{n.iter}{Maximal number of iterations per random start.}
+
+\item{random.seed}{Seed of the random number generator}
+
+\item{print.output}{Whether or not to print output to the console}
+
+\item{temp.file.location}{Directory where intermediate files will be written.}
 
 \item{modularity}{Modularity function to use in clustering (1 =
 standard; 2 = alternative).}
@@ -22,16 +32,6 @@ above (below) 1.0 if you want to obtain a larger
 \item{algorithm}{Algorithm for modularity optimization (1 =
 original Louvain algorithm; 2 = Louvain algorithm
 with multilevel refinement; 3 = SLM algorithm)}
-
-\item{n.start}{Number of random starts.}
-
-\item{n.iter}{Maximal number of iterations per random start.}
-
-\item{random.seed}{Seed of the random number generator}
-
-\item{print.output}{Whether or not to print output to the console}
-
-\item{temp.file.location}{Directory where intermediate files will be written.}
 }
 \value{
 Seurat object with identities set to the results

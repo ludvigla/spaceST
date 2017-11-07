@@ -7,7 +7,7 @@
 BuildTopicSNN(object, k.param = 30, k.scale = 25, plot.SNN = FALSE,
   prune.SNN = 1/15, print.output = TRUE, clusters = NULL, seed = 0,
   cluster.method = "SNN", perplexity = 15, color.by.sample, tsne = NULL,
-  layout = NULL, ...)
+  layout = NULL, algorithm = 1, ...)
 }
 \arguments{
 \item{object}{Topic matrix obtained with compute.lda() from cellTree package}
@@ -44,14 +44,15 @@ a network graph based algorithm using methods from the Seurat package.}
 
 \item{layout}{Set custom layout of vertices in network graph. Will override t-SNE results}
 
-\item{...}{Parameters passed to RunModularityClusteringspaceST() function used for clustering}
-
 \item{algorithm}{Algorithm for modularity optimization (1 = original Louvain
 algorithm; 2 = Louvain algorithm with multilevel refinement; 3 = SLM algorithm)}
+
+\item{...}{Parameters passed to RunModularityClusteringspaceST() function used for clustering}
 }
 \value{
 SNN matrix
 }
 \description{
-Build SNN graph
+This function is a modified version of the BuildSNN function in the single cell genomics
+tool \href{https://github.com/satijalab/seurat}{Seurat} (Version: 2.1.0, date: 2017-10-11).
 }

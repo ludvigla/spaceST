@@ -19,9 +19,14 @@
 #' ST.object <- get.spaceST(bcST)
 #' ST.object
 #'
-#' # Filter data to keep features with more than 300 unique genes and genes with at least 1 count in 10 features
+#' # Filter data to keep features with more than 300 unique genes and genes
+#'  with at least 1 count in 10 features
 #' # and disable filtering of ribosomal protein coding genes/MALAT1.
-#' ST.object <- get.spaceST(bcST, unique.genes = 300, min.exp = 1, min.features = 10, filter.data = NULL)
+#' ST.object <- get.spaceST(bcST,
+#'                          unique.genes = 300,
+#'                          min.exp = 1,
+#'                          min.features = 10,
+#'                          filter.data = NULL)
 #' ST.object
 #' @export
 CreatespaceSTobject <- function(
@@ -33,7 +38,7 @@ CreatespaceSTobject <- function(
   batch.correct = FALSE
   ) {
   spaceST.version <- packageVersion("spaceST")
-  if (!(class(raw.data) %in% c("list", "data.frame"))) {
+  if (!(class(raw.data) %in% c("list", "data.frame", "matrix"))) {
     return("Wrong input format")
   }
   object <- new(

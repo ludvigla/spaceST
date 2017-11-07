@@ -115,7 +115,7 @@ get_coordinates.list <- function(x, rep = TRUE) {
 #' @description This function is used to merge datasets in a list of expression datasets.
 #' Genes which are not present in some datasets will get 0 values in those datasets. The merged dataset is
 #' subsequently filtered from features with few unique genes and genes with low expression counts.
-#' @param x List of exrpression data frames.
+#' @param x List of exrpression data frames, data.frame or matrix.
 #' @param unique.genes Integer value specifying number of unique genes allowed in a feature.
 #' @param min.exp Integer value specifying lowest expression value allowed in min.features number of features.
 #' @param min.features Integer value specifying number of features allowed with min.exp count.
@@ -127,25 +127,29 @@ merge_exp_list <- function(x,
                        min.exp,
                        min.features,
                        filter.data){
-  for (i in 1:length(x)){
-    df <- x[[i]]
-    # Order gene names alphabetically
-    df <- df[order(rownames(df)), ]
-    # Add index row
-    df <- as.data.frame(cbind(id = rownames(df), df))
-    x[[i]] <- df
+  if (class(x) == "list") {
+    for (i in 1:length(x)){
+      df <- x[[i]]
+      # Order gene names alphabetically
+      df <- df[order(rownames(df)), ]
+      # Add index row
+      df <- as.data.frame(cbind(id = rownames(df), df))
+      x[[i]] <- df
+    }
+    df.A <- x[[1]]
+    for (i in 2:length(x)){
+      df.B <- x[[i]]
+      df.A <- merge(df.A, df.B, by = "id", all = TRUE)
+    }
+    gene.names <- df.A$id
+    # remove id column
+    sample.df <- df.A[, -1]
+    sample.df <- apply(sample.df, 2, as.numeric)
+    rownames(sample.df) <- gene.names
+    sample.df[is.na(sample.df)] <- 0
+  } else if (class(x) %in% c("data.frame", "matrix")) {
+    sample.df <- as.data.frame(x)
   }
-  df.A <- x[[1]]
-  for (i in 2:length(x)){
-    df.B <- x[[i]]
-    df.A <- merge(df.A, df.B, by = "id", all = TRUE)
-  }
-  gene.names <- df.A$id
-  # remove id column
-  sample.df <- df.A[, -1]
-  sample.df <- apply(sample.df, 2, as.numeric)
-  rownames(sample.df) <- gene.names
-  sample.df[is.na(sample.df)] <- 0
   if (!is.null(filter.data)){
     sample.df = sample.df[!rownames(sample.df) %in% filter.data,]
   }

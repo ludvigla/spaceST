@@ -263,6 +263,7 @@ morph.3d = function(object,
 #' @importFrom htmlwidgets prependContent
 #' @importFrom htmltools HTML
 #' @importFrom RColorBrewer brewer.pal
+#' @importFrom grDevices colorRampPalette heat.colors
 #' @export
 js3Dscatter <- function(df, filepath1 = NULL, colorscale = "viridis", size = 0.1, zlim = c(-30, 36), xlim = NULL, ylim = NULL, offset = 20, subsample = NULL, background.col = "#ffffff", zoom = 3, z = 2, neg = FALSE, alpha = 0.5, use.orbitcontrols = TRUE) {
   if (is.null(xlim)) {
@@ -372,6 +373,7 @@ js3Dscatter <- function(df, filepath1 = NULL, colorscale = "viridis", size = 0.1
 #'
 #' @param colors Input colors which will be converted to rgb
 #' @param alpha Set constant alpha level for rgb colors
+#' @importFrom grDevices col2rgb rgb
 #' @return rbga colors
 addalpha <- function(colors, alpha = 1.0) {
   r <- col2rgb(colors, alpha = T)

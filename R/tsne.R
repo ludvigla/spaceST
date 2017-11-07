@@ -50,7 +50,7 @@ RunTSNEspaceST <- function(
     if (!is.null(clusters)) {
       p <- ggplot(gg.df, aes(x = x, y = y, colour = factor(clusters))) +
         scale_color_manual(values = cols) +
-        labs(colour = "cluster", title = paste("t-SNE of ", dims.use, " results", sep = ""))
+        labs(colour = "cluster", title = paste("t-SNE of ", use.dims, " results", sep = ""))
     } else {
       p <- ggplot(gg.df, aes(x = x, y = y))
     }

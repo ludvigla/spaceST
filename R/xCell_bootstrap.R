@@ -2,8 +2,8 @@
 #'
 #' @slot rep.list  A list of pseudo-replicate bootstrap results
 #' @slot obs.df Data.frame with observed xCell values
-#' @slot mean.df Data.frame with median bootstrap values
-#' @slot bias.df Data.frame with bias values, i.e. difference between observed and median values
+#' @slot mean.df Data.frame with mean bootstrap values
+#' @slot bias.df Data.frame with bias values, i.e. difference between observed and mean values
 #' @slot betadist p-values
 #'
 #' @name xCellBoot
@@ -15,7 +15,7 @@ xCellBoot <- setClass(
   "xCellBoot",
   slots = c(rep.list = "list",
             obs.df = "data.frame",
-            median.df = "data.frame",
+            mean.df = "data.frame",
             bias.df = "data.frame"
   )
 )
@@ -34,7 +34,7 @@ CreatexCellBoot <- function(
   clusters,
   replicates
   ) {
-  if (!(class(x) %in% c("data.frame", "matrix"))) {
+  if (!(class(data) %in% c("data.frame", "matrix"))) {
     stop("Wrong input format")
   }
   new(
@@ -45,7 +45,7 @@ CreatexCellBoot <- function(
     clusters,
     replicates
   )
-  object@obs.df <- as.data.frame(xCellAnalysis(t(rowsum(t(x), clusters))))
+  object@obs.df <- as.data.frame(xCellAnalysis(t(rowsum(t(data), clusters))))
   celltypes <- rownames(object@obs.df)
   names(object@rep.list) <- celltypes
   rownames(object@obs.df) <- celltypes
@@ -63,13 +63,15 @@ CreatexCellBoot <- function(
 #' @param df Input gene expression data.frame.
 #' @param clusters Integer vector specifying cluster identity for each feature.
 #' @param replicates Integer specifying number of replicates to run.
+#' @importFrom tcltk tkProgressBar
+#' @importFrom xCell xCellAnalysis
 #' @export
 xCell.bootstrap <- function(df, clusters, replicates, progressbar = T) {
   if (progressbar) {
     rep_count <- 1
     # Suppress warnings globally
     options(warn = -1)
-    pb <- tcltk::tkProgressBar(min = 0,
+    pb <- tkProgressBar(min = 0,
                         max = replicates, width = 300)
   }
   rep.list <- list()
@@ -84,10 +86,10 @@ xCell.bootstrap <- function(df, clusters, replicates, progressbar = T) {
     samples <- do.call(c, sample.list)
     sample.df <- df[, samples]
     clust.matrix <- t(rowsum(t(sample.df), clusters.new))
-    xCell.res <- xCell::xCellAnalysis(clust.matrix)
+    xCell.res <- xCellAnalysis(clust.matrix)
     rep.list[[n]] <- xCell.res
     if (progressbar) {
-      tcltk::setTkProgressBar(pb, rep_count, label = paste(round(rep_count/replicates*100, 0), "% done"))
+      setTkProgressBar(pb, rep_count, label = paste(round(rep_count/replicates*100, 0), "% done"))
       rep_count <- rep_count + 1
     }
   }
@@ -177,18 +179,18 @@ setMethod("obs.bootstraps", "xCellBoot", function(object, filter = F, probs = 0.
   return(df)
 })
 
-setGeneric("median.bootstraps", function(object) standardGeneric("median.bootstraps"))
+setGeneric("mean.bootstraps", function(object) standardGeneric("mean.bootstraps"))
 
-#' Extract median bootstrap values
+#' Extract mean bootstrap values
 #'
-#' @description Extract the median xCell scores for each celltype and cluster from an xCellBoot object.
+#' @description Extract the mean xCell scores for each celltype and cluster from an xCellBoot object.
 #' @return Data.frame with celltypes as columns and replicates as rows.
 #' @export
-setMethod("median.bootstraps", "xCellBoot", function(object) {
+setMethod("mean.bootstraps", "xCellBoot", function(object) {
   if (class(object) != "xCellBoot"){
     stop("Wrong input format.")
   }
-  df <- object@median.df
+  df <- object@mean.df
   colnames(df) <- paste("c", colnames(df), sep = "")
   return(df)
 })
@@ -197,7 +199,7 @@ setGeneric("bias.bootstraps", function(object) standardGeneric("bias.bootstraps"
 
 #' Extract bias data
 #'
-#' @description Extract the median xCell scores for each celltype and cluster from an xCellBoot object.
+#' @description Extract the mean xCell scores for each celltype and cluster from an xCellBoot object.
 #' @return Data.frame with celltypes as columns and replicates as rows.
 #' @export
 setMethod("bias.bootstraps", "xCellBoot", function(object) {

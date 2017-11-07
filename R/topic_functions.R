@@ -5,7 +5,7 @@
 #' @param object spaceST object with expression data or data.frame
 #' @param max.topic Maximum number of topics
 #' @param num.genes Number of genes to use for lda modelling
-#' @param type Character string specifying if the "corrected" or "raw" data should be used as input. Default
+#' @param type Character string specifying if the "normalized", "corrected" or "raw" data should be used as input. Default
 #' is set to "corrected"
 #' @return Topic matrix
 #' @rdname topic_compute
@@ -29,7 +29,6 @@ topic_compute.default <- function(
   min.topic = 2,
   max.topic = 15,
   num.genes = NULL,
-  type = "corrected",
   method = "maptpx",
   sd.filter = F,
   log.scale = F
@@ -59,7 +58,6 @@ topic_compute.spaceST <- function(
   min.topic = 2,
   max.topic = 15,
   num.genes = NULL,
-  type = "corrected",
   method = "maptpx",
   sd.filter = FALSE,
   log.scale = FALSE,
@@ -69,6 +67,8 @@ topic_compute.spaceST <- function(
     df <- object@corrected
   } else if (type == "raw") {
     df <- object@expr
+  } else if (type == "normalized") {
+    df <- object@normalized
   } else {
     stop("No corrected dataset present. Set dataset = 'raw' if you want to use the raw data")
   }

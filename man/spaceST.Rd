@@ -18,6 +18,8 @@ multiple tissue sections
 
 \item{\code{corrected}}{A data.frame with batch corrected gene expressiond data}
 
+\item{\code{normalized}}{A matrix with normalized expression values}
+
 \item{\code{topics}}{Topic matrix obtained using compute.lda() function from cellTree}
 
 \item{\code{coordinates}}{A data.frame to represent feature coordinates in the expression dataset}

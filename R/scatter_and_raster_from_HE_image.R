@@ -12,7 +12,7 @@
 #' library(spaceST)
 #' # Create scatter pattern and plot results
 #'
-#' scatter <- scatter_HE(img = <path to black and white HE image>, show.plot = T)
+#' scatter <- scatter_HE(img = "path to black and white HE image", show.plot = T)
 #' @return Data.frame with x, y coordinates representing cell nuclei on an HE image.
 #' @export
 scatter_HE <- function(img, coords = NULL, limit = 0.5, rownum = 5e4, show.plot = FALSE, offset_x = 0.75, offset_y = 0.75) {
@@ -31,7 +31,7 @@ scatter_HE.default <- function(img,
   } else if (!file.exists(img)) {
     stop("No such file exists.")
   }
-  bw.image = jpeg::readJPEG(img)
+  bw.image = readJPEG(img)
   img = which(bw.image < limit , arr.ind = TRUE)
 
   test.y = attributes(bw.image)$dim[1] / 34
@@ -73,7 +73,7 @@ scatter_HE.default <- function(img,
 scatter_HE.list <- function(img, limit = 0.5, rownum = 5e4, show.plot = FALSE, offset){
   grid_list <- list()
   for (i in 1:length(img)) {
-    grid_list[[i]] <- scatter_HE(img[[i]], limit = limit, rownum = rownum, offset = offset)
+    grid_list[[i]] <- scatter_HE(img[[i]], limit = limit, rownum = rownum, offset_x = offset_x, offset_y = offset_y)
   }
   return(grid_list)
 }

@@ -1,5 +1,8 @@
 #' Build SNN graph
 #'
+#' This function is a modified version of the BuildSNN function in the single cell genomics
+#' tool \href{https://github.com/satijalab/seurat}{Seurat} (Version: 2.1.0, date: 2017-10-11).
+#'
 #' @param object Topic matrix obtained with compute.lda() from cellTree package
 #' @param k.param Defines k for the k-nearest neighbor algorithm
 #' @param k.scale Granularity option for k.param
@@ -25,6 +28,9 @@
 #' @param layout Set custom layout of vertices in network graph. Will override t-SNE results
 #' @param ... Parameters passed to RunModularityClusteringspaceST() function used for clustering
 #' @importFrom FNN get.knn
+#' @importFrom igraph plot.igraph categorical_pal
+#' @importFrom graphics legend
+#' @importFrom Matrix sparseMatrix
 #' @return SNN matrix
 #' @rdname BuildTopicSNN
 #' @export
@@ -42,6 +48,7 @@ BuildTopicSNN <- function(
   color.by.sample,
   tsne = NULL,
   layout = NULL,
+  algorithm = 1,
   ...
 ) {
   if (!length(object@topics) > 0) {
@@ -98,9 +105,10 @@ BuildTopicSNN <- function(
           clusters <- RunModularityClusteringspaceST(
             SNN = w,
             print.output = print.output,
-            algorithm = algorithm,
+            set.algorithm = algorithm,
             ...
           )
+          object@meta.data$clusters.snn <- clusters
         }
       } else if (is.null(clusters) & color.by.sample) {
         clusters <- object@coordinates$replicate
@@ -151,9 +159,9 @@ BuildTopicSNN <- function(
 #' @importFrom utils read.table write.table
 RunModularityClusteringspaceST <- function(
   SNN = NULL,
-  modularity = 1,
-  resolution = 0.8,
-  algorithm = 1,
+  set.modularity = 1,
+  set.resolution = 0.8,
+  set.algorithm = 1,
   n.start = 100,
   n.iter = 10,
   random.seed = 0,
@@ -198,17 +206,24 @@ RunModularityClusteringspaceST <- function(
     row.names = FALSE,
     col.names = FALSE
   )
-  if (modularity == 2 && resolution > 1) {
+  if (set.modularity == 2 && set.resolution > 1) {
     stop("error: resolution<1 for alternative modularity")
   }
+  print(class(set.modularity))
+  print(class(set.resolution))
+  print(class(set.algorithm))
+  print(class(n.start))
+  print(class(n.iter))
+  print(class(random.seed))
+  print(class(print.output))
   command <- paste(
     "java -jar",
     shQuote(string = ModularityJarFile),
     shQuote(string = edge_file),
     shQuote(string = output_file),
-    modularity,
-    resolution,
-    algorithm,
+    set.modularity,
+    set.resolution,
+    set.algorithm,
     n.start,
     n.iter,
     random.seed,
@@ -227,6 +242,7 @@ RunModularityClusteringspaceST <- function(
 #' @param x R object
 #' @param default R object to replace x with if x is NULL
 #' @return default if x is NULL
+#' @export
 SetIfNull <- function (x, default)
 {
   if (is.null(x = x)) {

@@ -4,7 +4,8 @@
 \alias{spatial.clusters}
 \title{Visualize spatial distribution of clusters}
 \usage{
-spatial.clusters(clusters, coords, HE, size = 4, ...)
+spatial.clusters(clusters, coords, HE, size = 4, xlim = c(0, 32),
+  ylim = c(0, 34), type = "ST_grid", ...)
 }
 \arguments{
 \item{clusters}{Integer vector specifying feature cluster identity for corresponding feature coordinates.}

@@ -8,8 +8,9 @@
 #' @param select.rep.group Select replicate by replicate ID
 #' @param select.clust.group Select cluster by cluster number
 #' @param ... Parameters passed to ggnet2
-#' @importFrom ggnet2 ggnet2
+#' @importFrom ggnet ggnet2
 #' @importFrom igraph graph.adjacency V E induced_subgraph
+#' @export
 SpatialNetwork <- function(
   object,
   subset_by = NULL,
@@ -20,11 +21,15 @@ SpatialNetwork <- function(
   vertex.size = 1,
   edge.color = "black",
   edge.size = 0.1,
+  clusters.snn = F,
   ...
 ) {
   if (is.null(object@snn)) {
     stop("No snn matrix present in spaceST object. Run CalcSNNspaceST() to compute SNN graph.")
   }
+  stopifnot(
+    !is.null(object@meta.data$clusters)
+  )
   snn <- object@snn
   # Compute network
   net <- graph.adjacency(
@@ -33,10 +38,19 @@ SpatialNetwork <- function(
     weighted = TRUE,
     diag = FALSE
   )
-  V(net)$clusters <- object@meta.data$clusters
-  V(net)$replicates <- object@coordinates$replicate
+  if (clusters.snn) {
+    V(net)$clusters <- object@meta.data$clusters.snn
+  } else {
+    V(net)$clusters <- object@meta.data$clusters
+  }
+  V(net)$replicates <- as.numeric(object@coordinates$replicate)
   V(net)$x <- object@coordinates$x
   V(net)$y <- 35 - object@coordinates$y
+  if (mode == "tsne") {
+    stopifnot(length(object@tsne) > 0)
+    V(net)$x <- object@tsne[, 1]
+    V(net)$y <- object@tsne[, 2]
+  }
   # Subset graph
   if (!is.null(subset_by)) {
     if (subset_by == "clusters") {
@@ -51,12 +65,12 @@ SpatialNetwork <- function(
         stop(paste("Not a valid replicate ID. Available IDs:", print(unique(object@coordinates$replicate))))
       }
       net <- induced_subgraph(net, V(net)[replicates == select.rep.group])
-      net <- induced_subgraph(net, V(net)[clusters == select.clust.group])
+      net <- induced_subgraph(net, V(net)[clusters %in% select.clust.group])
     }
   }
   # Define layout
   if (!is.null(mode)) {
-    if (mode == "spatial") {
+    if (mode == "spatial" | mode == "tsne") {
       net.layout <- c("x", "y")
     } else {
       net.layout <- mode
@@ -66,17 +80,22 @@ SpatialNetwork <- function(
   if (color_by == "clusters") {
     col <- V(net)$clusters
   } else if (color_by == "replicate") {
-    col <- V(net)$replicate
+    col <- V(net)$replicates
   } else {
     col <- color_by
   }
-
+  cols <- c("royalblue3", "mediumpurple4", "navajowhite2", "chocolate", "firebrick", "yellow2","aquamarine", "orange1", "olivedrab2", "darkgreen", "pink", "navy", "khaki3", "lightsteelblue1")
+  if (length(unique(col)) > 14) {
+    cols = c("#771155", "#AA4488", "#CC99BB", "#114477", "#4477AA", "#77AADD", "#117777", "#44AAAA", "#77CCCC", "#117744", "#44AA77", "#88CCAA", "#777711", "#AAAA44", "#DDDD77", "#774411", "#AA7744", "#DDAA77", "#771122", "#AA4455", "#DD7788")
+  }
+  col <- cols[col]
   pnet <- ggnet2(net,
          mode = net.layout,
          color = col,
          size = vertex.size,
          edge.color = edge.color,
          edge.size = edge.size,
+         #palette = cols,
          ...
          )
   if (mode == "spatial") {

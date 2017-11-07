@@ -15,9 +15,9 @@ xCellBoot class
 
 \item{\code{obs.df}}{Data.frame with observed xCell values}
 
-\item{\code{mean.df}}{Data.frame with median bootstrap values}
+\item{\code{mean.df}}{Data.frame with mean bootstrap values}
 
-\item{\code{bias.df}}{Data.frame with bias values, i.e. difference between observed and median values}
+\item{\code{bias.df}}{Data.frame with bias values, i.e. difference between observed and mean values}
 
 \item{\code{betadist}}{p-values}
 }}

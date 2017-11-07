@@ -11,6 +11,7 @@
 #' @param mirror_x flip along x axis
 #' @param mirror_y flip along y axis
 #' @importFrom grid rasterGrob
+#' @importFrom jpeg readJPEG
 #' @importFrom ggplot2 ggplot geom_point annotation_custom theme element_blank
 #' @return Heatmap of spatially distributed scores.
 #' @export
@@ -39,7 +40,7 @@ spatial.heatmap <- function(x,
   score.df <- interpolate_2D_data(score.df, raster, x = as.numeric(colnames(raster)[1]), y = as.numeric(colnames(raster)[2]))
   p <- ggplot(score.df, aes(x = x+shift_x, y = shift_y-y, color = val))
   if (!is.null(HE)) {
-    HE_img = jpeg::readJPEG(HE)
+    HE_img = readJPEG(HE)
     g <- rasterGrob(HE_img, width = unit(1, "npc"), height = unit(1, "npc"), interpolate = TRUE)
     p <- p + annotation_custom(g, -Inf, Inf, -Inf, Inf) +
       geom_point(alpha = alpha, size = size)
@@ -50,11 +51,11 @@ spatial.heatmap <- function(x,
     p <- p + scale_x_continuous(limits = lim_x, expand = c(0, 0)) +
       scale_y_continuous(limits = lim_y, expand = c(0, 0)) +
       scale_color_brewer(palette = "set1") +
-      ggplot2::theme(axis.line = ggplot2::element_blank(),
-                     panel.grid.major = ggplot2::element_blank(),
-                     panel.grid.minor = ggplot2::element_blank(),
-                     panel.border = ggplot2::element_blank(),
-                     panel.background = ggplot2::element_blank(),
+      theme(axis.line = element_blank(),
+                     panel.grid.major = element_blank(),
+                     panel.grid.minor = element_blank(),
+                     panel.border = element_blank(),
+                     panel.background = element_blank(),
                      axis.title.x = element_blank(),
                      axis.text.x = element_blank(),
                      axis.ticks.x = element_blank(),
@@ -65,11 +66,11 @@ spatial.heatmap <- function(x,
   } else if (class(score.df$val) == "numeric") {
     p <- p + scale_x_continuous(limits = lim_x, expand = c(0, 0)) +
       scale_y_continuous(limits = lim_y, expand = c(0, 0)) +
-      ggplot2::theme(axis.line = ggplot2::element_blank(),
-                     panel.grid.major = ggplot2::element_blank(),
-                     panel.grid.minor = ggplot2::element_blank(),
-                     panel.border = ggplot2::element_blank(),
-                     panel.background = ggplot2::element_blank(),
+      theme(axis.line = element_blank(),
+                     panel.grid.major = element_blank(),
+                     panel.grid.minor = element_blank(),
+                     panel.border = element_blank(),
+                     panel.background = element_blank(),
                      axis.title.x = element_blank(),
                      axis.text.x = element_blank(),
                      axis.ticks.x = element_blank(),
@@ -123,13 +124,17 @@ spatial.heatmap <- function(x,
 #' # Plot spatial heatmap
 #' spatial.clusters(clusters, coords, HE = "/path/to/HE")
 #' @export
-spatial.clusters <- function(clusters, coords, HE, size = 4, ...) {
+spatial.clusters <- function(clusters, coords, HE, size = 4, xlim = c(0, 32), ylim = c(0, 34), type = "ST_grid", ...) {
   stopifnot(is.integer(clusters),
             is.data.frame(coords),
             is.character(HE),
             file.exists(HE))
   clust.coords <- cbind(clusters, coords)
-  p <- ggplot(clust.coords, aes(x = x-1, y = 35-y, color = factor(clusters, levels = (1:max(unique(clusters))))))
+  if (type == "ST_grid") {
+    p <- ggplot(clust.coords, aes(x = x-1, y = 35-y, color = factor(clusters, levels = (1:max(unique(clusters))))))
+  } else if (type == "pixels") {
+    p <- ggplot(clust.coords, aes(x = x, y = y, color = factor(clusters, levels = (1:max(unique(clusters))))))
+  }
   if (!is.null(HE)) {
     HE_img = jpeg::readJPEG(HE)
     g <- rasterGrob(HE_img, width = unit(1, "npc"), height = unit(1, "npc"), interpolate = TRUE)
@@ -138,8 +143,21 @@ spatial.clusters <- function(clusters, coords, HE, size = 4, ...) {
   } else {
     p <- p + geom_point(size = size, ...)
   }
-  p <- p + scale_x_continuous(limits = c(0, 32), expand = c(0, 0)) +
-    scale_y_continuous(limits = c(0, 34), expand = c(0, 0)) +
+  p <- p + scale_x_continuous(limits = xlim, expand = c(0, 0)) +
+    scale_y_continuous(limits = ylim, expand = c(0, 0)) +
+    theme(axis.line = element_blank(),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.border = element_blank(),
+          panel.background = element_blank(),
+          axis.title.x = element_blank(),
+          axis.text.x = element_blank(),
+          axis.ticks.x = element_blank(),
+          axis.title.y = element_blank(),
+          axis.text.y = element_blank(),
+          axis.ticks.y = element_blank()) +
+    labs(color = "unique genes (mean)")
+  if (type == "ST_grid") {
     scale_color_manual(values = c("1" = "royalblue3",
                                   "2" = "mediumpurple4",
                                   "3" = "navajowhite2",
@@ -154,18 +172,9 @@ spatial.clusters <- function(clusters, coords, HE, size = 4, ...) {
                                   "12" = "black",
                                   "13" = "navy",
                                   "14" = "khaki3",
-                                  "15" = "lightsteelblue1")) +
-    theme(axis.line = element_blank(),
-                   panel.grid.major = element_blank(),
-                   panel.grid.minor = element_blank(),
-                   panel.border = element_blank(),
-                   panel.background = element_blank(),
-                   axis.title.x = element_blank(),
-                   axis.text.x = element_blank(),
-                   axis.ticks.x = element_blank(),
-                   axis.title.y = element_blank(),
-                   axis.text.y = element_blank(),
-                   axis.ticks.y = element_blank()) +
-    labs(color = "clusters")
+                                  "15" = "lightsteelblue1"))
+  } else {
+    p <- p + scale_color_brewer(palette = "Set1")
+  }
   plot(p)
 }

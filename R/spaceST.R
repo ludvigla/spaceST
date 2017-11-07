@@ -1,10 +1,11 @@
-#' The spaceST class
+#' @title The spaceST class
 #'
 #' @description An S4 class object used to filter and store spatial transcriptomics data from
 #' multiple tissue sections
 #' @slot raw.data Raw input data
 #' @slot expr A data.frame with filtered gene expression data
 #' @slot corrected A data.frame with batch corrected gene expressiond data
+#' @slot normalized A matrix with normalized expression values
 #' @slot topics Topic matrix obtained using compute.lda() function from cellTree
 #' @slot coordinates A data.frame to represent feature coordinates in the expression dataset
 #' @slot filter.settings A list with settings used for filtering
@@ -21,8 +22,8 @@ spaceST <- setClass(
     raw.data = "ANY",
     expr = "data.frame",
     corrected = "data.frame",
+    normalized = "matrix",
     topics = "matrix",
-    clusters = "integer",
     tsne = "matrix",
     snn = "ANY",
     coordinates = "data.frame",
@@ -92,20 +93,29 @@ setMethod(
 #' Normalize ST data
 #'
 #' @param object spaceST object with expression data to correct
-#' @param method select normalization method [default "cp10k"]. Curently only sp10k available
+#' @param method select normalization method, default "cp10k" (options: "cp10k", "scran")
 #' @param log2 Logical specifying whether or not data should be log2-transformed
+#' @param clusters Integer vector specifying clusters used for normalization of large
+#' sce objects. Only for "scran" normalization.
+#' @importFrom scater newSCESet sizeFactors
+#' @importFrom scran quickCluster computeSumFactors
 #' @return Normalized data frame in slot normalized
-setGeneric(name = "normalize",
+#' @export
+setGeneric(name = "NormalizespaceST",
            def = function(object,
-                          method = "cp10k",
-                          log2 = F) standardGeneric("normalize"))
+                          method = "scran",
+                          log2 = F,
+                          clusters = NULL,
+                          ...) standardGeneric("NormalizespaceST"))
 #' @export
 setMethod(
-  f = "normalize",
+  f = "NormalizespaceST",
   signature = "spaceST",
   definition = function(object,
                         method = "cp10k",
-                        log2 = F) {
+                        log2 = F,
+                        clusters = NULL,
+                        ...) {
   if (class(object) != "spaceST"){
     stop("Wrong input format.")
   }
@@ -114,7 +124,26 @@ setMethod(
   } else {
     norm.data <- object@expr
   }
-  object@normalized <- calc_cpm(norm.data)
+  if (log2 & method == "cp10k") {
+    object@normalized <- log2(calc_cpm(norm.data) + 1)
+  } else {
+    if (method == "scran") {
+      if (is.null(object@clusters))
+      sce <- newSCESet(countData = data.frame(norm.data))
+      if (!is.null(clusters)) {
+        sce <- computeSumFactors(sce, cluster = clusters)
+      } else {
+        sce <- computeSumFactors(sce)
+      }
+      if (sum(sizeFactors(sce) == 0) > 0) {
+        stop("Zero sum factors not allowed. Filter data before normalizetion with scran.")
+      }
+      sce <- scater::normalize(sce)
+      object@normalized <- as.matrix(sce)
+    } else if (method == "cp10k") {
+      object@normalized <- calc_cpm(norm.data)
+    }
+  }
   return(object)
   }
 )
@@ -127,7 +156,7 @@ setMethod(
 #' @param object spaceST object with expression data
 #' @return Plot of the first two principal components of expression data.
 #' @examples
-#' library(STanalysis3D)
+#' library(spaceST)
 #' data(bcST)
 #'
 #' # Create spaceST object from gene expression data

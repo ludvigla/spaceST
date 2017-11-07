@@ -18,7 +18,7 @@ stored in a spaceST object. By default, both raw expression and batch corrected 
 data will be plotted if both are present.
 }
 \examples{
-library(STanalysis3D)
+library(spaceST)
 data(bcST)
 
 # Create spaceST object from gene expression data
