@@ -7,6 +7,9 @@
 #' For more options, see available placement algorithms in the sna package)
 #' @param select.rep.group Select replicate by replicate ID
 #' @param select.clust.group Select cluster by cluster number
+#' @param vertex.size Size of nodes/vertices
+#' @param edge.color Color edges of network
+#' @param edge.size Select size for edges in network
 #' @param ... Parameters passed to ggnet2
 #' @importFrom ggnet ggnet2
 #' @importFrom igraph graph.adjacency V E induced_subgraph
@@ -54,7 +57,7 @@ SpatialNetwork <- function(
   # Subset graph
   if (!is.null(subset_by)) {
     if (subset_by == "clusters") {
-      net <- induced_subgraph(net, V(net)[clusters == select.clust.group])
+      net <- induced_subgraph(net, V(net)[clusters %in% select.clust.group])
     } else if (subset_by == "replicate") {
       if (!select.rep.group %in% unique(object@coordinates$replicate)) {
         stop(paste("Not a valid replicate ID. Available IDs:", print(unique(object@coordinates$replicate))))

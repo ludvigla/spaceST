@@ -1,5 +1,5 @@
 #' Helper function to compute lda using cellTree package
-#'
+#'TODO: fix bbug in Set dataset "raw" for single df
 #' @description This helper function is used to compute topics for an expression dataset using lda modelling
 #' from cellTree package
 #' @param object spaceST object with expression data or data.frame
@@ -29,6 +29,7 @@ topic_compute.default <- function(
   min.topic = 2,
   max.topic = 15,
   num.genes = NULL,
+  type = "corrected",
   method = "maptpx",
   sd.filter = F,
   log.scale = F
@@ -59,6 +60,7 @@ topic_compute.spaceST <- function(
   max.topic = 15,
   num.genes = NULL,
   method = "maptpx",
+  type = "corrected",
   sd.filter = FALSE,
   log.scale = FALSE,
   force.recalc = FALSE
@@ -70,7 +72,7 @@ topic_compute.spaceST <- function(
   } else if (type == "normalized") {
     df <- object@normalized
   } else {
-    stop("No corrected dataset present. Set dataset = 'raw' if you want to use the raw data")
+    stop("No corrected dataset present. Set type = 'raw' if you want to use the raw data")
   }
   omega <- topic_compute.default(
     df,
