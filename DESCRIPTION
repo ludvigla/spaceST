@@ -19,7 +19,6 @@ Imports:
     scran,
     scater,
     Seurat,
-    cowplot,
     cellTree,
     dynamicTreeCut,
     gplots,
