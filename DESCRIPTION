@@ -30,7 +30,6 @@ Imports:
     magrittr,
     ggdendro,
     reshape2,
-    CountClust,
     FNN, 
     RColorBrewer,
     Rtsne,
