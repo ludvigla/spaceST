@@ -40,7 +40,6 @@ Imports:
     sp, 
     threejs, 
     viridis, 
-    xCell,
     ggnet,
     akima,
     igraph,
