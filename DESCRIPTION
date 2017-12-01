@@ -17,7 +17,6 @@ Imports:
     ggplot2,
     gridExtra,
     scran,
-    scater,
     Seurat,
     cellTree,
     dynamicTreeCut,
