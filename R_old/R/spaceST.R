@@ -34,7 +34,6 @@ spaceST <- setClass(
   )
 )
 
-
 #' show method for spaceST
 #'
 #' @param object A spaceST object
@@ -68,7 +67,6 @@ setMethod("show", signature = "spaceST", definition = function(object) {
   }
 })
 
-
 #' Batch correction of spaceST data
 #'
 #' @param object spaceST object with expression data to correct
@@ -94,7 +92,6 @@ setMethod(
   }
 )
 
-
 #' Normalize ST data
 #'
 #' @param object spaceST object with expression data to correct
@@ -103,7 +100,7 @@ setMethod(
 #' @param clusters Integer vector specifying clusters used for normalization of large
 #' sce objects. Only for "scran" normalization.
 #' @param ... Argumants passed to
-#' @importFrom scater newSCESet sizeFactors normalize
+#' @importFrom scater newSCESet sizeFactors
 #' @importFrom scran quickCluster computeSumFactors
 #' @rdname normalize
 #' @return Normalized data frame in slot normalized
@@ -111,7 +108,6 @@ setMethod(
 setGeneric(name = "NormalizespaceST",
            def = function(object,
                           method = "scran",
-                          type = "corrected",
                           log2 = F,
                           clusters = NULL
            ) standardGeneric("NormalizespaceST"))
@@ -122,22 +118,22 @@ setMethod(
   signature = "spaceST",
   definition = function(object,
                         method = "cp10k",
-                        type = "corrected",
                         log2 = F,
                         clusters = NULL) {
     if (class(object) != "spaceST"){
       stop("Wrong input format.")
     }
-    if (type == "corrected" & length(object@corrected) > 0){
+    if (length(object@corrected) > 0){
       norm.data <- object@corrected
-    } else if (type == "raw"){
+    } else {
       norm.data <- object@expr
     }
     if (log2 & method == "cp10k") {
       object@normalized <- log2(calc_cpm(norm.data) + 1)
     } else {
       if (method == "scran") {
-        sce <- newSCESet(countData = data.frame(norm.data))
+        if (is.null(object@clusters))
+          sce <- newSCESet(countData = data.frame(norm.data))
         if (!is.null(clusters)) {
           sce <- computeSumFactors(sce, cluster = clusters)
         } else {
@@ -146,7 +142,7 @@ setMethod(
         if (sum(sizeFactors(sce) == 0) > 0) {
           stop("Zero sum factors not allowed. Filter data before normalizetion with scran.")
         }
-        sce <- normalize(sce)
+        sce <- scater::normalize(sce)
         object@normalized <- as.matrix(sce)
       } else if (method == "cp10k") {
         object@normalized <- calc_cpm(norm.data)
@@ -155,7 +151,6 @@ setMethod(
     return(object)
   }
 )
-
 
 #' Plot pca of spaceST data
 #'
@@ -189,7 +184,7 @@ setMethod("pca.spaceST", "spaceST", function(object, ...) {
 #' @param object spaceST object with expression data.
 #' @param dataset Character string specifying if the "corrected" or "raw" data should be used as input. Default
 #' is set to "corrected".
-#' @param separate Logical indicating whether replicates should be ploteed separ2ately
+#' @param separate Logical indicating whether replicates should be ploteed separately
 #' @rdname QC
 #' @return Histograms of unique genes per feature and transcripts per feature distributions.
 #' @export

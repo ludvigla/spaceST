@@ -1,49 +1,48 @@
 Package: spaceST
 Type: Package
-Title: What the Package Does (Title Case)
+Title: spaceST
 Version: 0.1.0
 Author: Ludvig Larsson
 Maintainer: The package maintainer <ludvig.larsson@scilifelab.se>
-Description: Analysis toolbox for Spatial Transcriptomics data
+Description: More about what it does (maybe more than one line)
     Use four spaces when indenting paragraphs within the Description.
 License: What license is it under?
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 6.0.1
-Depends:
-    R (>= 3.2.0),
-SystemRequirements: Java (>= 1.6)
-Imports: 
-    ggplot2,
-    gridExtra,
-    scran,
-    Seurat,
-    cellTree,
-    dynamicTreeCut,
-    gplots,
-    jpeg,
-    shiny,
-    raster,
-    Biobase,
-    plotly,
-    magrittr,
-    ggdendro,
-    reshape2,
-    FNN, 
-    RColorBrewer,
-    Rtsne,
-    biomaRt,
-    gtable,
-    htmltools,
-    htmlwidgets,
-    sp, 
-    threejs, 
-    viridis, 
-    ggnet,
-    akima,
-    igraph,
-    methods
-Suggests: 
+Suggests:
     knitr,
     rmarkdown
 VignetteBuilder: knitr
+RoxygenNote: 6.0.1.9000
+SystemRequirements: Java (>= 1.6)
+Imports:
+    ggplot2,
+    methods,
+    Biobase,
+    CountClust,
+    FNN,
+    Matrix,
+    RColorBrewer,
+    Rtsne,
+    akima,
+    biomaRt,
+    cellTree,
+    cowplot,
+    ggdendro,
+    ggnet,
+    gplots,
+    gtable,
+    htmltools,
+    htmlwidgets,
+    igraph,
+    jpeg,
+    plotly,
+    raster,
+    reshape2,
+    scales,
+    scater,
+    scran,
+    sp,
+    threejs,
+    viridis,
+    xCell

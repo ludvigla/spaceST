@@ -1,7 +1,6 @@
 #' Scale, move and rotate binary dot pattern
 #'
 #' @description This function is used to manually align binary dot patterns.
-#' @import ggplot2
 #' @param data A list with a binary dot pattern and corresponding feature coordinates used to create the pattern.
 #' @param df_ref A reference binary dot pattern that that you want to align the new pattern to.
 #' @param sx Scale x coordinates with sx scalar, i.e. expand or contract along x axis.
@@ -169,12 +168,12 @@ align.grids <- function(scatter, df_ref = NULL, plot.coords = F, return.df = T, 
              shiny::sliderInput(
                inputId = "scale_x",
                label = "Scale x axis",
-               value = 1, min = 0.1, 2
+               value = 1, min = 0.1, max = 2, step = 0.01
              ),
              shiny::sliderInput(
                inputId = "scale_y",
                label = "Scale y axis",
-               value = 1, min = 0.1, 2
+               value = 1, min = 0.1, max = 2, step = 0.01
              ),
              shiny::sliderInput(
                inputId = "shift_x",

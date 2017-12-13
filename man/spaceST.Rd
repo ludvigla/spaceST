@@ -22,10 +22,16 @@ multiple tissue sections
 
 \item{\code{topics}}{Topic matrix obtained using compute.lda() function from cellTree}
 
+\item{\code{tsne}}{Tsne results in matrix format}
+
+\item{\code{snn}}{SNN adjacency matrix}
+
 \item{\code{coordinates}}{A data.frame to represent feature coordinates in the expression dataset}
 
 \item{\code{filter.settings}}{A list with settings used for filtering}
 
-\item{\code{statistics}}{A list with a data.frame and plot object for quality control}
+\item{\code{meta.data}}{Meta data slot}
+
+\item{\code{version}}{package version}
 }}
 

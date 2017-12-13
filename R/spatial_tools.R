@@ -24,8 +24,6 @@ spatial.heatmap <- function(x,
                             mirror_x = F,
                             mirror_y = F,
                             title = NULL,
-                            shift_x = -1,
-                            shift_y = 35,
                             lim_x = c(0, 32),
                             lim_y = c(0, 34),
                             max = 1) {
@@ -38,7 +36,13 @@ spatial.heatmap <- function(x,
   score.df <- cbind(coords, x)
   colnames(score.df) <- c("x", "y", "val")
   score.df <- interpolate_2D_data(score.df, raster, x = as.numeric(colnames(raster)[1]), y = as.numeric(colnames(raster)[2]))
-  p <- ggplot(score.df, aes(x = x+shift_x, y = shift_y-y, color = val))
+  if (mirror_x) {
+    score.df$x <- -score.df$x
+  }
+  if (mirror_y) {
+    score.df$y <- -score.df$y
+  }
+  p <- ggplot(score.df, aes(x = x, y = y, color = val))
   if (!is.null(HE)) {
     HE_img = readJPEG(HE)
     g <- rasterGrob(HE_img, width = unit(1, "npc"), height = unit(1, "npc"), interpolate = TRUE)
@@ -83,12 +87,6 @@ spatial.heatmap <- function(x,
                              guide = "colorbar",
                              na.value = "white") +
       ggtitle(title)
-    if (mirror_x) {
-      p <- p + scale_x_reverse()
-    }
-    if (mirror_y) {
-      p <- p + scale_y_reverse()
-    }
     plot(p)
   }
 }
@@ -108,24 +106,9 @@ spatial.heatmap <- function(x,
 #' @importFrom grid rasterGrob
 #' @importFrom ggplot2 ggplot geom_point annotation_custom theme element_blank
 #' @return Plot of clustered featured overlayed on black and white HE image.
-#' @examples
-#' library(spaceST)
-#'
-#' data(bcST)
-#' spaceST.object <- CreatespaceSTobject(bcST, corrected = T)
-#'
-#' # Run factor analysis and cluster features
-#' spaceST.object <- topic_compute(spaceST.object)
-#' clusters <- topic_clusters(topic.df)
-#'
-#' # Get coordinates from spaceST object
-#' coords <- get_coordinates(spaceST)[, 1:2]
-#'
-#' # Plot spatial heatmap
-#' spatial.clusters(clusters, coords, HE = "/path/to/HE")
 #' @export
-spatial.clusters <- function(clusters, coords, HE, size = 4, xlim = c(0, 32), ylim = c(0, 34), type = "ST_grid", ...) {
-  stopifnot(is.integer(clusters),
+spatial.clusters <- function(clusters, coords, HE, size = 4, type = "ST_grid", ...) {
+  stopifnot(is.integer(clusters) | is.numeric(clusters),
             is.data.frame(coords),
             is.character(HE),
             file.exists(HE))
@@ -140,12 +123,15 @@ spatial.clusters <- function(clusters, coords, HE, size = 4, xlim = c(0, 32), yl
     g <- rasterGrob(HE_img, width = unit(1, "npc"), height = unit(1, "npc"), interpolate = TRUE)
     p <- p + annotation_custom(g, -Inf, Inf, -Inf, Inf) +
       geom_point(size = size, ...)
+    if (type == "pixels") {
+      print(dim(HE_img)[2]*2.5)
+      p <- p + scale_x_continuous(limits = c(0, dim(HE_img)[2]), expand = c(0, 0)) +
+        scale_y_continuous(limits = c(0, dim(HE_img)[1]), expand = c(0, 0))
+    }
   } else {
     p <- p + geom_point(size = size, ...)
   }
-  p <- p + scale_x_continuous(limits = xlim, expand = c(0, 0)) +
-    scale_y_continuous(limits = ylim, expand = c(0, 0)) +
-    theme(axis.line = element_blank(),
+  p <- p + theme(axis.line = element_blank(),
           panel.grid.major = element_blank(),
           panel.grid.minor = element_blank(),
           panel.border = element_blank(),
@@ -158,7 +144,7 @@ spatial.clusters <- function(clusters, coords, HE, size = 4, xlim = c(0, 32), yl
           axis.ticks.y = element_blank()) +
     labs(color = "unique genes (mean)")
   if (type == "ST_grid") {
-    scale_color_manual(values = c("1" = "royalblue3",
+    p <- p + scale_color_manual(values = c("1" = "royalblue3",
                                   "2" = "mediumpurple4",
                                   "3" = "navajowhite2",
                                   "4" = "chocolate",

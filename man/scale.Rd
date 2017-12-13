@@ -20,7 +20,7 @@ Scaled numeric vector.
 Scale numeric vector to fit a certain interval.
 }
 \examples{
-library(STanalysis3D)
+library(spaceST)
 
 # Scale vector to fit an interval between 0 and 1
 x <- seq(1, 100)

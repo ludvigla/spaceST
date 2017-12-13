@@ -2,9 +2,9 @@
 #'
 #' @description Given a data.frame with gene expression values (genes as rows and observations as columns), this function will return a
 #' data.frame with unique genes and transcript counts for each observation, as well as the sample id
+#' @export
 #' @param df Input gene expression data.frame
 #' @return Data.frame with unique genes per feature and transcripts per feature
-#' @export
 ST_statistics<- function(df){
   stopifnot(
     is.data.frame(df)
@@ -18,46 +18,49 @@ ST_statistics<- function(df){
 #' Quality Control plot
 #'
 #' @description This function plots histograms of unique genes per feature and transcripts per featrure.
+#' @export
 #' @param df Input quality control data.frame.
+#' @param separate Should replicates be treated separately?
 #' @return Plot of histograms.
 #' @importFrom cowplot plot_grid
-#' @export
+#' @importFrom ggplot2 element_blank theme aes geom_histogram facet_grid scale_color_manual geom_vline element_line
+#' @importFrom scales muted
 ST_statistics.plot <- function(df, separate = F){
-  theme_none <- ggplot2::theme(axis.line = ggplot2::element_line(colour = "black"),
-                      panel.grid.major = ggplot2::element_blank(),
-                      panel.grid.minor = ggplot2::element_blank(),
-                      panel.border = ggplot2::element_blank(),
-                      panel.background = ggplot2::element_blank())
+  theme_none <- theme(axis.line = element_line(colour = "black"),
+                      panel.grid.major = element_blank(),
+                      panel.grid.minor = element_blank(),
+                      panel.border = element_blank(),
+                      panel.background = element_blank())
   if (separate == T) {
-    p1 <- ggplot2::ggplot(df, ggplot2::aes(x = unique.genes.per.feature)) +
-      ggplot2::geom_histogram(bins = 30, fill = scales::muted("dark blue"), color = "black") +
+    p1 <- ggplot(df, aes(x = unique.genes.per.feature)) +
+      geom_histogram(bins = 30, fill = muted("dark blue"), color = "black") +
       theme_none +
-      ggplot2::scale_color_manual(name = "", values = c(median = "black")) +
-      ggplot2::facet_grid(~samples)
+      scale_color_manual(name = "", values = c(median = "black")) +
+      facet_grid(~samples)
 
-    p2 <- ggplot2::ggplot(df, ggplot2::aes(x = transcripts.per.feature)) +
-      ggplot2::geom_histogram(bins = 30, fill = scales::muted("red"), color = "black") +
+    p2 <- ggplot(df, aes(x = transcripts.per.feature)) +
+      geom_histogram(bins = 30, fill = muted("red"), color = "black") +
       theme_none +
-      ggplot2::scale_color_manual(name = "", values = c(median = "black")) +
+      scale_color_manual(name = "", values = c(median = "black")) +
       facet_grid(~samples)
   } else {
-    p1 <- ggplot2::ggplot(df, ggplot2::aes(x = unique.genes.per.feature)) +
-      ggplot2::geom_histogram(bins = 30, fill = scales::muted("dark blue"), color = "black") +
-      ggplot2::geom_vline(ggplot2::aes(xintercept = median(df$unique.genes.per.feature), colour = "median"),
+    p1 <- ggplot(df, ggplot2::aes(x = unique.genes.per.feature)) +
+      geom_histogram(bins = 30, fill = muted("dark blue"), color = "black") +
+      geom_vline(aes(xintercept = median(df$unique.genes.per.feature), colour = "median"),
                           linetype="dashed",
                           size=1) +
       theme_none +
       ggplot2::scale_color_manual(name = "", values = c(median = "black"))
 
-    p2 <- ggplot2::ggplot(df, ggplot2::aes(x = transcripts.per.feature)) +
-      ggplot2::geom_histogram(bins = 30, fill = scales::muted("red"), color = "black") +
-      ggplot2::geom_vline(ggplot2::aes(xintercept = median(df$transcripts.per.feature), colour = "median"),
+    p2 <- ggplot(df, aes(x = transcripts.per.feature)) +
+      geom_histogram(bins = 30, fill = muted("red"), color = "black") +
+      geom_vline(aes(xintercept = median(df$transcripts.per.feature), colour = "median"),
                           linetype="dashed",
                           size=1) +
       theme_none +
-      ggplot2::scale_color_manual(name = "", values = c(median = "black"))
+      scale_color_manual(name = "", values = c(median = "black"))
   }
-  p <- cowplot::plot_grid(p1, p2, nrow = 2)
+  p <- plot_grid(p1, p2, nrow = 2)
   plot(p)
 }
 
@@ -65,19 +68,22 @@ ST_statistics.plot <- function(df, separate = F){
 #'
 #' @title get_coordinates: obtain spatial coordinates
 #' @description This function is used to collect all coordinates from a list of expression datasets or an expression dataset
-#' @param x List of expression data.frames, data.frame or matrix.
-#' @return Data frame with replicate numbers, x and y coordinates
-#' @rdname get_coordinates
 #' @export
+#' @rdname coordinates
+#' @param x List of expression data.frames, data.frame or matrix.
+#' @param rep Get replicate column
+#' @return Data frame with replicate numbers, x and y coordinates
 get_coordinates <- function(x, rep = TRUE) {
   UseMethod("get_coordinates")
 }
-#' @rdname get_coordinates
+
+#' @rdname coordinates
 #' @export
 get_coordinates.matrix <- function(x, rep = TRUE){
   get_coordinates.data.frame(x, rep = TRUE)
 }
-#' @rdname get_coordinates
+
+#' @rdname coordinates
 #' @export
 get_coordinates.data.frame <- function(x, rep = TRUE){
     ids <- colnames(x)
@@ -91,7 +97,8 @@ get_coordinates.data.frame <- function(x, rep = TRUE){
       return(coords[, 2:3])
     }
 }
-#' @rdname get_coordinates
+
+#' @rdname coordinates
 #' @export
 get_coordinates.spaceST <- function(x, rep = TRUE){
   if (nrow(x@corrected) == 0) {
@@ -100,7 +107,8 @@ get_coordinates.spaceST <- function(x, rep = TRUE){
     get_coordinates.data.frame(x@corrected, rep = rep)
   }
 }
-#' @rdname get_coordinates
+
+#' @rdname coordinates
 #' @export
 get_coordinates.list <- function(x, rep = TRUE) {
   coords_list <- list()
@@ -115,13 +123,14 @@ get_coordinates.list <- function(x, rep = TRUE) {
 #' @description This function is used to merge datasets in a list of expression datasets.
 #' Genes which are not present in some datasets will get 0 values in those datasets. The merged dataset is
 #' subsequently filtered from features with few unique genes and genes with low expression counts.
+#' @export
+#' @rdname merge
 #' @param x List of exrpression data frames, data.frame or matrix.
 #' @param unique.genes Integer value specifying number of unique genes allowed in a feature.
 #' @param min.exp Integer value specifying lowest expression value allowed in min.features number of features.
 #' @param min.features Integer value specifying number of features allowed with min.exp count.
 #' @param filter.data Character vector specifying genes that should be filtered out.
 #' @return Merged and filtered dataframe.
-#' @export
 merge_exp_list <- function(x,
                        unique.genes,
                        min.exp,
@@ -176,9 +185,9 @@ merge_exp_list <- function(x,
 #' @param df2 Expression dataset 2
 #' @param samples Vector of replicate numbers of length ncol(filtered)
 #' @param ... arguments passed to plotPCA function from scater
-#' @importFrom Biobase pData
 #' @importFrom scater newSCESet plotPCA
 #' @importFrom cowplot plot_grid
+#' @importFrom Biobase pData
 #' @return Scatter plot of PC1 and PC2.
 pca_plot <- function(df1, df2 = NULL, samples, ...){
   sce.raw = newSCESet(countData = df1)
@@ -197,33 +206,19 @@ pca_plot <- function(df1, df2 = NULL, samples, ...){
   plot(p)
 }
 
-#' Convert coordinates produced from json
-#'
-#' @description Use this funciton to convert coordinate names starting with X and add replicate
-#' number.
-#' @param df Dataframe with json headers.
-#' @param rep Integer value specifying replicate number.
-#' @return Return data.frame with modified headers.
-#' @export
-convert_coordinates_from_json <- function(df, rep) {
-  res <- strsplit(colnames(df), split = "X")
-  res <- paste(rep(rep, ncol(df)), do.call(rbind, res)[, 2], sep = "_")
-  colnames(df) <- gsub(x = res, pattern = "x", replacement = "_")
-  return(df)
-}
-
 #' Convert from ENSEMBL ID to HGNC symbol
 #'
 #' @description  Function used to convert ENSEMBL gene ids of an expression matrix into HGNC symbols.
+#' @export
+#' @rdname convert
 #' @param df Data.frame or matrix with ENSEMBL ids as rownames.
 #' @return Data.frame or matrix with converted names.
 #' @importFrom biomaRt useDataset getBM useMart
-#' @rdname ensembl2hgnc
-#' @export
 ensembl2hgnc <- function(df) {
   UseMethod("ensembl2hgnc")
 }
-#' @rdname ensembl2hgnc
+
+#' @rdname convert
 #' @export
 ensembl2hgnc.data.frame <- function(df) {
   mart <- useDataset("hsapiens_gene_ensembl", useMart("ensembl"))
@@ -234,12 +229,14 @@ ensembl2hgnc.data.frame <- function(df) {
   merged.df <- data.frame(aggregate(x = apply(merged.df[, 3:ncol(merged.df)], 2, function(x) as.numeric(as.character(x))), by = list(merged.df$hgnc_symbol), sum, na.rm = TRUE), row.names = 1)
   return(merged.df)
 }
-#' @rdname ensembl2hgnc
+
+#' @rdname convert
 #' @export
 ensembl2hgnc.matrix <- function(df) {
   return(ensembl2hgnc.data.frame(df))
 }
-#' @rdname ensembl2hgnc
+
+#' @rdname convert
 #' @export
 ensembl2hgnc.list <- function(df) {
   exp.list <- list()
@@ -252,9 +249,9 @@ ensembl2hgnc.list <- function(df) {
 #' Cast merged data to list of matrixes
 #'
 #' @description Cast any merged data.frame/matrix into a list of matrices for each replicate.
+#' @export
 #' @param df Merged data.frame/matrix with spaceST headers, i.e. features as columns.
 #' @return List of matrices.
-#' @export
 cast2list <- function(df) {
   samples <- as.integer(as.character(get_coordinates(df)[, 1]))
   exp.list <- list()
@@ -268,11 +265,11 @@ cast2list <- function(df) {
 #' Rename rownames of lists
 #'
 #' @description Rename colnames or rownames of list.
+#' @export
 #' @param x input list to rename element for.
 #' @param ref.list List to take names from.
 #' @param type Character specifying which names of x to change.
 #' @param ref.list.type Character specifying which names of ref.list to change.
-#' @export
 rename_list <- function(x, ref.list, type = "rownames", ref.list.type = "colnames") {
   renamed.list <- list()
   for (i in 1:length(x)) {
@@ -298,9 +295,10 @@ rename_list <- function(x, ref.list, type = "rownames", ref.list.type = "colname
 #' Normalize using CPTK method
 #'
 #' @description Function used to normalize ST data using Counts Per Ten thousand method
+#' @export
+#' @rdname norm
 #' @param expr_mat Expression data.frame or matrix.
 #' @return Normalized data.frame or matrix.
-#' @export
 calc_cpm <- function (expr_mat) {
   norm_factor <- colSums(expr_mat)
   return(t(t(expr_mat)/norm_factor)*10^4)

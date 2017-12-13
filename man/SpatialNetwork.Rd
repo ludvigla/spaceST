@@ -21,6 +21,12 @@ SpatialNetwork(object, subset_by = NULL, color_by = "clusters",
 \item{mode}{Select mode for network object, default NULL (options: "spatial", "circle", "kamadakawai", ...
 For more options, see available placement algorithms in the sna package)}
 
+\item{vertex.size}{Size of nodes/vertices}
+
+\item{edge.color}{Color edges of network}
+
+\item{edge.size}{Select size for edges in network}
+
 \item{...}{Parameters passed to ggnet2}
 }
 \description{

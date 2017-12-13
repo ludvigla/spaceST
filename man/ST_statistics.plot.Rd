@@ -8,6 +8,8 @@ ST_statistics.plot(df, separate = F)
 }
 \arguments{
 \item{df}{Input quality control data.frame.}
+
+\item{separate}{Should replicates be treated separately?}
 }
 \value{
 Plot of histograms.

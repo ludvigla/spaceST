@@ -13,6 +13,8 @@ topic_heatmap(df, method.dist = "euclidean", method.tree = "ward.D2",
 \item{method.dist}{Set distance method.}
 
 \item{method.tree}{Set clustering method.}
+
+\item{minClusterSize}{Minimum cluster size}
 }
 \value{
 Heatmap of topic results.

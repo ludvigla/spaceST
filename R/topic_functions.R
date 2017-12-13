@@ -2,14 +2,18 @@
 #'TODO: fix bbug in Set dataset "raw" for single df
 #' @description This helper function is used to compute topics for an expression dataset using lda modelling
 #' from cellTree package
+#' @export
 #' @param object spaceST object with expression data or data.frame
+#' @param min.topics Minimum number of topics
 #' @param max.topic Maximum number of topics
 #' @param num.genes Number of genes to use for lda modelling
 #' @param type Character string specifying if the "normalized", "corrected" or "raw" data should be used as input. Default
 #' is set to "corrected"
+#' @param method method passed to CellTree function
+#' @param sd.filter Standard deviation threshold
+#' @param log.scale Convert to log scale
+#' @importFrom cellTree compute.lda
 #' @return Topic matrix
-#' @rdname topic_compute
-#' @export
 topic_compute <- function(
   object,
   min.topic = 2,
@@ -18,11 +22,12 @@ topic_compute <- function(
   type = "corrected",
   method = "maptpx",
   sd.filter = F,
-  log.scale = F
+  log.scale = F,
+  force.recalc = F,
+  minClusterSize = 30
 ) {
 UseMethod("topic_compute")
 }
-#' @rdname topic_compute
 #' @export
 topic_compute.default <- function(
   object,
@@ -32,7 +37,9 @@ topic_compute.default <- function(
   type = "corrected",
   method = "maptpx",
   sd.filter = F,
-  log.scale = F
+  log.scale = F,
+  force.recalc = F,
+  minClusterSize = 30
 ){
   ave.exp = rowMeans(object)
   sort.ave.exp = sort(ave.exp, decreasing = T)
@@ -44,7 +51,7 @@ topic_compute.default <- function(
   }
   GoM.sample.df = object[high.genes,]
   K = c(min.topic:max.topic)
-  lda.results = cellTree::compute.lda(GoM.sample.df,
+  lda.results = compute.lda(GoM.sample.df,
                                       k.topics = K,
                                       method = method,
                                       sd.filter = sd.filter,
@@ -52,7 +59,6 @@ topic_compute.default <- function(
   omega <- lda.results$omega
   return(omega)
 }
-#' @rdname topic_compute
 #' @export
 topic_compute.spaceST <- function(
   object,
@@ -63,7 +69,8 @@ topic_compute.spaceST <- function(
   type = "corrected",
   sd.filter = FALSE,
   log.scale = FALSE,
-  force.recalc = FALSE
+  force.recalc = FALSE,
+  minClusterSize = 30
 ){
   if (length(object@corrected) > 0 & type == "corrected") {
     df <- object@corrected
@@ -93,23 +100,20 @@ topic_compute.spaceST <- function(
   } else if (!length(object@meta.data) > 0 | !force.recalc) {
     warning("LDA method has already been computed for this object. Set force.calc = TRUE if you want to overwrite the results")
   }
-  object@meta.data$clusters <- topic_clusters(omega = omega)
-  object@meta.data$dist.method <- "Euclidean"
-  object@meta.data$tree.method <- "Ward.D2"
-  object@meta.data$minClusterSize <- 30
+  object@meta.data$clusters <- topic_clusters(omega = omega, minClusterSize = minClusterSize)
+  object@meta.data$minClusterSize <- minClusterSize
   return(object)
 }
 
 #' Calculate clusters based on topics
 #'
 #' @description This function is used to cluster features based on a topics matrix.
-#' @import dynamicTreeCut
+#' @export
 #' @param omega Topic data.frame.
 #' @param method.dist Set distance method.
 #' @param method.tree Set clustering method.
-#' @param minCLusterSize Integer value specifying the minimum cluster size allowed.
+#' @param minClusterSize Integer value specifying the minimum cluster size allowed.
 #' @return Integer vector specifying cluster identity of each feature.
-#' @export
 topic_clusters <- function(omega, method.dist = "euclidean", method.tree = "ward.D2", minClusterSize = 30){
   my.dist = dist(omega, method = method.dist)
   my.tree = hclust(my.dist, method = method.tree)
@@ -120,12 +124,13 @@ topic_clusters <- function(omega, method.dist = "euclidean", method.tree = "ward
 #' Plot heatmap of lda results
 #'
 #' @description This function is used to plot a heatmap of lda results.
+#' @export
 #' @param df Topic data.frame (omega) or "topics" class object.
 #' @param method.dist Set distance method.
 #' @param method.tree Set clustering method.
+#' @param minClusterSize Minimum cluster size
 #' @importFrom gplots heatmap.2
 #' @return Heatmap of topic results.
-#' @export
 topic_heatmap <- function(df, method.dist = "euclidean", method.tree = "ward.D2", minClusterSize = 30){
   stopifnot(class(df) == "data.frame" | class(df) == "matrix" | class(df) == "topics")
   if (class(df) == "topics"){
@@ -177,11 +182,11 @@ topic_heatmap <- function(df, method.dist = "euclidean", method.tree = "ward.D2"
 #' Compute cluster matrix
 #'
 #' @description This function is used to pool clustered features by adding the gene expression values within each cluster.
+#' @export
 #' @param df Expression data used to compute topics which will be pooled using cluster vector.
 #' @param omega Topic data.frame (omega is used to calculate clusters on the fly using the topic.clusters function)
 #' @param clusters Integer vector specifying cluster identity of each feature (if "clusters" is specified, the "omega" parameter is not needed).
 #' @return Integer vector specifying cluster identity of each feature.
-#' @export
 topic_cluster_matrix <- function(df, omega = NULL, clusters = NULL){
   if (!(class(df) %in% c("data.frame", "matrix"))){
     stop("Wrong input format.")
@@ -205,12 +210,11 @@ topic_cluster_matrix <- function(df, omega = NULL, clusters = NULL){
 #' QC plot for pooled data
 #'
 #' @description This function is used to plot a comparison of the number of unique genes before and after pooling.
-#' @import ggplot2
+#' @export
 #' @param expr Expression data used for clustering.
 #' @param clust.df Cluster matrix obtained with topic.cluster.matrix function.
 #' @param type Set type to compare, options; "genes", "transcripts"
 #' @return Comparison plot between the number of unique genes in pooled clusters vs features.
-#' @export
 topic_cluster_QC_plot <- function(expr, clust.df, type = "genes"){
   if (!(class(expr) %in% c("data.frame", "matrix"))){
     stop("Wrong input format of expr.")

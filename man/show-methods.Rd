@@ -3,7 +3,7 @@
 \docType{methods}
 \name{show}
 \alias{show}
-\alias{show,spaceST-method}
+\alias{spaceST-show}
 \title{show method for spaceST}
 \usage{
 \S4method{show}{spaceST}(object)

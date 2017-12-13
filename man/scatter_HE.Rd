@@ -4,8 +4,7 @@
 \alias{scatter_HE}
 \title{Generate binary dot pattern}
 \usage{
-scatter_HE(img, coords = NULL, limit = 0.5, rownum = 50000,
-  show.plot = FALSE, offset_x = 0.75, offset_y = 0.75)
+scatter_HE(img, limit = 0.5, rownum = 50000, show.plot = FALSE)
 }
 \arguments{
 \item{img}{File path or list of file paths for BW image(s).}
@@ -21,10 +20,4 @@ Data.frame with x, y coordinates representing cell nuclei on an HE image.
 Given a black and white HE image, this function can be used to create a scatter representatio of cell nuclei ditributed
 over the tissue image. The image needs to be completely free from noise surrounding the tissue area and make sure that the colorspace
 is set to grey.
-}
-\examples{
-library(spaceST)
-# Create scatter pattern and plot results
-
-scatter <- scatter_HE(img = "path to black and white HE image", show.plot = T)
 }

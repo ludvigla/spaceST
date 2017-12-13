@@ -24,6 +24,6 @@ Heatmap of xCell scores.
 }
 \description{
 Given an xCell output data.frame, this function can be used to generate a heatmap of xCell scores for celltypes
-and clusters. You can subset the data using the default groups provided in the STanalysis3D package or provide a character vector
+and clusters. You can subset the data using the default groups provided in the spaceST package or provide a character vector
 of cell type names. Clusters and cell types are automatically ordered with dendrograms using hclust (method = "Ward.D2").
 }

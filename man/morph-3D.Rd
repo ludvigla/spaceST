@@ -33,7 +33,13 @@ corresponding grid cells.}
 \item{background.col}{Sets background color using rgb channels. Default 'rgb(0, 0, 0)' = "black". Use function col2rgb("color") to
 obtain rgb channel values for custom colors ("white" = 'rgb(255, 255, 255)).}
 
+\item{grid.color}{Set color of background grid.}
+
 \item{marker.size}{Numeric value specifying marker size (point size).}
+
+\item{min.size}{Set minimum size of markers.}
+
+\item{max.size}{Set maximum size of markers.}
 
 \item{range}{Set range of colorscale. range = "zero_to_one" will scale values to [0, 1] interval.}
 
@@ -66,6 +72,14 @@ data points which are concealing the high value clusters.}
 \item{skip.every}{Used to subset final data output.}
 
 \item{return.df}{Logical specifying whether or not the data should be returned. This will override the plot functionality.}
+
+\item{subsample}{Subsample data to decrease number of markers.}
+
+\item{add.rotation}{Add rotation button to html widget.}
+
+\item{rot.angle}{Set roation angle of camera.}
+
+\item{rot.offset}{Set rotation offset of camera.}
 }
 \value{
 Interactive 3D scatter object.

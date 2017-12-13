@@ -12,7 +12,7 @@
 #' @param edge.size Select size for edges in network
 #' @param ... Parameters passed to ggnet2
 #' @importFrom ggnet ggnet2
-#' @importFrom igraph graph.adjacency V E induced_subgraph
+#' @importFrom igraph graph.adjacency `V<-` E induced_subgraph
 #' @export
 SpatialNetwork <- function(
   object,
@@ -42,9 +42,9 @@ SpatialNetwork <- function(
     diag = FALSE
   )
   if (clusters.snn) {
-    V(net)$clusters <- object@meta.data$clusters.snn
+    igraph::V(net)$clusters <- object@meta.data$clusters.snn
   } else {
-    V(net)$clusters <- object@meta.data$clusters
+    igraph::V(net)$clusters <- object@meta.data$clusters
   }
   V(net)$replicates <- as.numeric(object@coordinates$replicate)
   V(net)$x <- object@coordinates$x
@@ -101,9 +101,5 @@ SpatialNetwork <- function(
          #palette = cols,
          ...
          )
-  if (mode == "spatial") {
-    pnet <- pnet + scale_x_continuous(limits = c(0, 32)) +
-      scale_y_continuous(limits = c(0, 35))
-  }
   plot(pnet)
 }

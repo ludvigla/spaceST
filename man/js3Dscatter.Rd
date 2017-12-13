@@ -12,15 +12,35 @@ js3Dscatter(df, filepath1 = NULL, colorscale = "viridis", size = 0.1,
 \arguments{
 \item{df}{data.frame with x, y, z coordinates and interpolated values.}
 
+\item{filepath1}{Filepath to annotated image}
+
 \item{colorscale}{specify which colorscale to use. Options: "viridis", "magma", "plasma", "inferno" or
 an RColorBrewer palette}
 
 \item{size}{Set marker size in rendered plot}
 
+\item{zlim}{Limits for z axis}
+
+\item{xlim}{Limits for x axis}
+
+\item{ylim}{Limits for y axis}
+
 \item{offset}{Time offset between frames in milliseconds.}
 
 \item{subsample}{Integer specifying number of data points to include. Downsampling will
 decresase rendering time.}
+
+\item{background.col}{Set background color}
+
+\item{zoom}{Set zoom level}
+
+\item{z}{Set z value for camera}
+
+\item{neg}{Specify if values should be inverted}
+
+\item{alpha}{Set alpha level}
+
+\item{use.orbitalcontrols}{More efficient rotation}
 }
 \value{
 html widget

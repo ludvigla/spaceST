@@ -28,21 +28,3 @@ A spaceST object containing filtered gene expression data for multiple replicate
 This function is used to filter ST expression data used for 3D analysis. Features with low number of unique
 genes and genes with low expression values will be removed. By default, ribosomal proteins and MALAT1 genes are also removed
 }
-\examples{
-library(STanalysis3D)
-data(bcST)
-
-# Filter with default dettings
-ST.object <- get.spaceST(bcST)
-ST.object
-
-# Filter data to keep features with more than 300 unique genes and genes
- with at least 1 count in 10 features
-# and disable filtering of ribosomal protein coding genes/MALAT1.
-ST.object <- get.spaceST(bcST,
-                         unique.genes = 300,
-                         min.exp = 1,
-                         min.features = 10,
-                         filter.data = NULL)
-ST.object
-}

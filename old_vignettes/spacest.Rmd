@@ -1,16 +1,16 @@
 ---
-title: "Introdutction to STanalysis3D"
+title: "Introdutction to spaceST"
 author: "Ludvig Larsson"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Introdutction to STanalysis3D}
+  %\VignetteIndexEntry{Introdutction to spaceST}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
 # Introduction
-The STanalysis3D package comes with a toolbok of functions specifically designed to work with Spatial Transcriptomics data. The main advantage is to simplify data processing steps when working with multiple replicates from the same tissue, making it possible to extend the analysis to 3D. To take full advantage of the package, it is recommended to work with RStudio. 
+The spaceST package comes with a toolbok of functions specifically designed to work with Spatial Transcriptomics data. The main advantage is to simplify data processing steps when working with multiple replicates from the same tissue, making it possible to extend the analysis to 3D. To take full advantage of the package, it is recommended to work with RStudio. 
 
 ## Part I: Prepare data
 
@@ -19,11 +19,11 @@ The STanalysis3D package comes with a toolbok of functions specifically designed
     3. Create spaceST object and run uality checks
     
 ### 1. Install package
-First of all, you need to download the package from github. For this, you will need to install the devtools [package](https://github.com/hadley/devtools). Once devtools has been installed, you can install STanalysis3D by typing the following in the RStudio console:
+First of all, you need to download the package from github. For this, you will need to install the devtools [package](https://github.com/hadley/devtools). Once devtools has been installed, you can install spaceST by typing the following in the RStudio console:
 
 ```{r, eval = FALSE}
 library(devtools)
-install_github("ludvigla/ST_analysis3D")
+install_github("ludvigla/spaceST")
 ```
 
 ### 2. Prepare data
@@ -36,7 +36,7 @@ The first is to load som gene expression ST data. The format of these expression
 Once you have prepared the expression matrices with the correct headers, they should be saved into a list of matrices. The package includes a prepared dataset called bcST that can be loaded into your R session. The bcST dataset 
 
 ```{r, message=FALSE, warning=FALSE, eval = FALSE}
-library(STanalysis3D)
+library(spaceST)
 #data(bcST)
 ```
 ```{r, echo=FALSE, results='asis'}
@@ -48,7 +48,7 @@ Above is a chunk of replicate 1 in the bcST dataset. Note that the genes are giv
 
 ```{r, eval = FALSE}
 # Replace ensembl gene ids with HGNC symbols
-exp.list <- ensembl2hgnc(exp.list)
+#exp.list <- ensembl2hgnc(exp.list)
 
 ```
 
@@ -57,22 +57,22 @@ Now you can merge the expression datasets into a spaceST object. The merged expr
 
 ```{r, eval = FALSE}
 # Initialize spaceST object with batch correction
-spaceST.object <- get.spaceST(bcST, correction = T)
-spaceST.object
+#spaceST.object <- CreatespaceSTobject(bcST, correction = T)
+#spaceST.object
 ```
 
 Alternatively, you might want to plot the summary statistics as histograms instead. You could also make a PCA plot of the replicates to check for technical variations between replicates. The pca.spaceST() function will automatically compare the filtered expression data with the batch corrected data if this is present.
 
 ```{r, fig.show='hold', eval = FALSE}
 # QC plot
-plot.QC.spaceST(spaceST.object)
+#plot.QC.spaceST(spaceST.object)
 
 # PCA plot
-pca.spaceST(spaceST.object)
+#pca.spaceST(spaceST.object)
 ```
 ```{r, fig.show='hold', fig.width=6, eval = FALSE}
 # Or if you want to split up relicates in separate plots
-plot.QC.spaceST(spaceST.object, separate = T)
+#plot.QC.spaceST(spaceST.object, separate = T)
 ```
 
 ## Part II: factor analysis
@@ -85,7 +85,7 @@ plot.QC.spaceST(spaceST.object, separate = T)
 
 ### 1. Compute factors using cellTree package
 
-STanalysis3D includes a helper function which lets you run the lda.compute() function from the cellTree package directly on a spaceST object. Alternatively, you could extract the batch corrected data and run lda.compute() or any other factor analysis method on the dataset.
+spaceST includes a helper function which lets you run the lda.compute() function from the cellTree package directly on a spaceST object. Alternatively, you could extract the batch corrected data and run lda.compute() or any other factor analysis method on the dataset.
 
 The default settings tests the 5000 most highly expressed genes and tests between 2 and 15 topics to find the optimal number. The topic matrix which best explains the data will be returned, or set return.lda = TRUE to return the whole "topics" object. You could test more than 15 topics, but typically the likelihood only increase slightly for a large number of topics which makes additional topics redundant. 
 

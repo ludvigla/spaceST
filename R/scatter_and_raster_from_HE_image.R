@@ -8,19 +8,13 @@
 #' @param img File path or list of file paths for BW image(s).
 #' @param limit Defines cutoff on the greyscale for what to interpret as a valid coordinate.
 #' @param rownum Number of rows in output grid, i.e. the maximum number of points to keep.
-#' @examples
-#' library(spaceST)
-#' # Create scatter pattern and plot results
-#'
-#' scatter <- scatter_HE(img = "path to black and white HE image", show.plot = T)
 #' @return Data.frame with x, y coordinates representing cell nuclei on an HE image.
 #' @export
-scatter_HE <- function(img, coords = NULL, limit = 0.5, rownum = 5e4, show.plot = FALSE, offset_x = 0.75, offset_y = 0.75) {
+scatter_HE <- function(img, limit = 0.5, rownum = 5e4, show.plot = FALSE) {
   UseMethod("scatter_HE")
 }
 #' @export
 scatter_HE.default <- function(img,
-                               coords = NULL,
                                limit = 0.5,
                                rownum = 5e4,
                                show.plot = FALSE,
@@ -39,11 +33,6 @@ scatter_HE.default <- function(img,
 
   V1 = (img[,2] / test.x) + 1
   V2 = (img[,1] / test.y) + 1
-
-  #if (!is.null(coords)) {
-  #  V1 = scale2range(V1, (min(coords[,1]) - offset_x), (max(coords[, 1]) + offset_x))
-  #  V2 = scale2range(V2, (min(coords[,2]) - offset_y), (max(coords[, 2]) + offset_y))
-  #}
 
   img = cbind(V1, V2)
   set.seed(1)
@@ -70,10 +59,10 @@ scatter_HE.default <- function(img,
   return(img)
 }
 #' @export
-scatter_HE.list <- function(img, limit = 0.5, rownum = 5e4, show.plot = FALSE, offset){
+scatter_HE.list <- function(img, limit = 0.5, rownum = 5e4, show.plot = FALSE){
   grid_list <- list()
   for (i in 1:length(img)) {
-    grid_list[[i]] <- scatter_HE(img[[i]], limit = limit, rownum = rownum, offset_x = offset_x, offset_y = offset_y)
+    grid_list[[i]] <- scatter_HE(img[[i]], limit = limit, rownum = rownum)
   }
   return(grid_list)
 }

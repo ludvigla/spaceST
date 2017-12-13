@@ -4,8 +4,7 @@
 \alias{spatial.clusters}
 \title{Visualize spatial distribution of clusters}
 \usage{
-spatial.clusters(clusters, coords, HE, size = 4, xlim = c(0, 32),
-  ylim = c(0, 34), type = "ST_grid", ...)
+spatial.clusters(clusters, coords, HE, size = 4, type = "ST_grid", ...)
 }
 \arguments{
 \item{clusters}{Integer vector specifying feature cluster identity for corresponding feature coordinates.}
@@ -27,20 +26,4 @@ can be used to visualize the spatial distribution of clusters.
 
 NOTE: The input image should be cropped to the centers of the frame corners, i.e. the outermost layer of features.
 This is a requirement for the
-}
-\examples{
-library(spaceST)
-
-data(bcST)
-spaceST.object <- CreatespaceSTobject(bcST, corrected = T)
-
-# Run factor analysis and cluster features
-spaceST.object <- topic_compute(spaceST.object)
-clusters <- topic_clusters(topic.df)
-
-# Get coordinates from spaceST object
-coords <- get_coordinates(spaceST)[, 1:2]
-
-# Plot spatial heatmap
-spatial.clusters(clusters, coords, HE = "/path/to/HE")
 }

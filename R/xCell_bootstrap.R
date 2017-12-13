@@ -216,7 +216,6 @@ setMethod("bias.bootstraps", "xCellBoot", function(object) {
 #' @description Violin or boxplot of xCell scores.
 #' @param df Input data.frame.
 #' @param type Charcter string specifying plot type ('violin' or 'boxplot').
-#' @import xCell
 #' @importFrom reshape2 melt
 #' @return Plot of xCell score distributions.
 #' @export

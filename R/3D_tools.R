@@ -5,6 +5,7 @@
 #' @param df Data.frame with object values, e.g. xCell scores, gene expression, topics, ...
 #' @param trans Transformed x, y coordinates centered around (0, 0).
 #' @param object Specific object to analyze, e.g. celltype, gene, or topic.
+#' @rdname format-3D
 #' @return Object specific values and coordinates.
 format_3D_data <- function(df, trans, object){
   object.values = df[rownames(df) == object, ]
@@ -24,9 +25,10 @@ format_3D_data <- function(df, trans, object){
 #' @param x Input numeric vector.
 #' @param a Lower limit.
 #' @param b Upper limit.
+#' @rdname scale
 #' @return Scaled numeric vector.
 #' @examples
-#' library(STanalysis3D)
+#' library(spaceST)
 #'
 #' # Scale vector to fit an interval between 0 and 1
 #' x <- seq(1, 100)
@@ -52,7 +54,10 @@ scale2range <- function(x, a, b){
 #' @param colorscale Set colorscale for 3D scatter (e.g. Jet, Portland, Viridis and grey, see plotly documentation)
 #' @param background.col Sets background color using rgb channels. Default 'rgb(0, 0, 0)' = "black". Use function col2rgb("color") to
 #' obtain rgb channel values for custom colors ("white" = 'rgb(255, 255, 255)).
+#' @param grid.color Set color of background grid.
 #' @param marker.size Numeric value specifying marker size (point size).
+#' @param min.size Set minimum size of markers.
+#' @param max.size Set maximum size of markers.
 #' @param range Set range of colorscale. range = "zero_to_one" will scale values to [0, 1] interval.
 #' @param opacity Numeric between 0-1 specifying marker opacity.
 #' @param show.top Numeric between 0-1 specifying which subset of data to show. show.top = 0.5 will show all markers with
@@ -73,7 +78,13 @@ scale2range <- function(x, a, b){
 #' @param cam Set camera angle of plot object.
 #' @param skip.every Used to subset final data output.
 #' @param return.df Logical specifying whether or not the data should be returned. This will override the plot functionality.
+#' @param subsample Subsample data to decrease number of markers.
+#' @param add.rotation Add rotation button to html widget.
+#' @param rot.angle Set roation angle of camera.
+#' @param rot.offset Set rotation offset of camera.
 #' @importFrom plotly plot_ly add_markers layout
+#' @importFrom htmlwidgets appendContent
+#' @rdname morph-3D
 #' @return Interactive 3D scatter object.
 #' @export
 morph.3d = function(object,
@@ -251,12 +262,22 @@ morph.3d = function(object,
 #' @description Given a data.frame with x, y, z coordinates and interpolates values, this function
 #' can be used to generate a html widget visualizing 3D scatter data.
 #' @param df data.frame with x, y, z coordinates and interpolated values.
+#' @param filepath1 Filepath to annotated image
 #' @param colorscale specify which colorscale to use. Options: "viridis", "magma", "plasma", "inferno" or
 #' an RColorBrewer palette
 #' @param size Set marker size in rendered plot
+#' @param zlim Limits for z axis
+#' @param xlim Limits for x axis
+#' @param ylim Limits for y axis
 #' @param offset Time offset between frames in milliseconds.
 #' @param subsample Integer specifying number of data points to include. Downsampling will
 #' decresase rendering time.
+#' @param background.col Set background color
+#' @param zoom Set zoom level
+#' @param z Set z value for camera
+#' @param neg Specify if values should be inverted
+#' @param alpha Set alpha level
+#' @param use.orbitalcontrols More efficient rotation
 #' @return html widget
 #' @importFrom viridis viridis magma inferno plasma
 #' @importFrom threejs scatterplot3js
@@ -265,7 +286,23 @@ morph.3d = function(object,
 #' @importFrom RColorBrewer brewer.pal
 #' @importFrom grDevices colorRampPalette heat.colors
 #' @export
-js3Dscatter <- function(df, filepath1 = NULL, colorscale = "viridis", size = 0.1, zlim = c(-30, 36), xlim = NULL, ylim = NULL, offset = 20, subsample = NULL, background.col = "#ffffff", zoom = 3, z = 2, neg = FALSE, alpha = 0.5, use.orbitcontrols = TRUE) {
+js3Dscatter <- function(
+  df,
+  filepath1 = NULL,
+  colorscale = "viridis",
+  size = 0.1,
+  zlim = c(-30, 36),
+  xlim = NULL,
+  ylim = NULL,
+  offset = 20,
+  subsample = NULL,
+  background.col = "#ffffff",
+  zoom = 3,
+  z = 2,
+  neg = FALSE,
+  alpha = 0.5,
+  use.orbitcontrols = TRUE
+) {
   if (is.null(xlim)) {
     xlim = c(min(df[, 1]) - 5, max(df[, 1]) + 5)
     ylim = xlim

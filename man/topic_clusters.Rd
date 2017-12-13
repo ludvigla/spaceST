@@ -14,7 +14,7 @@ topic_clusters(omega, method.dist = "euclidean", method.tree = "ward.D2",
 
 \item{method.tree}{Set clustering method.}
 
-\item{minCLusterSize}{Integer value specifying the minimum cluster size allowed.}
+\item{minClusterSize}{Integer value specifying the minimum cluster size allowed.}
 }
 \value{
 Integer vector specifying cluster identity of each feature.

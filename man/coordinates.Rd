@@ -20,6 +20,8 @@ get_coordinates(x, rep = TRUE)
 }
 \arguments{
 \item{x}{List of expression data.frames, data.frame or matrix.}
+
+\item{rep}{Get replicate column}
 }
 \value{
 Data frame with replicate numbers, x and y coordinates
