@@ -129,111 +129,124 @@ get_coordinates.list <- function(x, rep = TRUE) {
 #' @param unique.genes Integer value specifying number of unique genes allowed in a feature.
 #' @param min.exp Integer value specifying lowest expression value allowed in min.features number of features.
 #' @param min.features Integer value specifying number of features allowed with min.exp count.
-#' @param filter.data Character vector specifying genes that should be filtered out.
+#' @param filter.genes Character vector specifying genes that should be filtered out.
 #' @return Merged and filtered dataframe.
 merge_exp_list <- function(x,
-                       unique.genes,
-                       min.exp,
-                       min.features,
-                       filter.data){
+                  unique.genes = 0,
+                  min.exp = 0,
+                  min.features = 0,
+                  filter.genes = NULL){
   if (class(x) == "list") {
-    for (i in 1:length(x)){
-      df <- x[[i]]
-      # Order gene names alphabetically
-      df <- df[order(rownames(df)), ]
-      # Add index row
-      df <- as.data.frame(cbind(id = rownames(df), df))
-      x[[i]] <- df
-    }
     df.A <- x[[1]]
     for (i in 2:length(x)){
       df.B <- x[[i]]
-      df.A <- merge(df.A, df.B, by = "id", all = TRUE)
+      df.A <- data.frame(merge(df.A, df.B, by = "row.names", all = TRUE), row.names = 1)
     }
-    gene.names <- df.A$id
-    # remove id column
-    sample.df <- df.A[, -1]
-    sample.df <- apply(sample.df, 2, as.numeric)
-    rownames(sample.df) <- gene.names
-    sample.df[is.na(sample.df)] <- 0
+    df.A[is.na(df.A)] <- 0
+    all.samples.matrix <- as(as.matrix(df.A), "dgCMatrix")
   } else if (class(x) %in% c("data.frame", "matrix")) {
-    sample.df <- as.data.frame(x)
+    all.samples.matrix <- as(as.matrix(x), "dgCMatrix")
   }
-  if (!is.null(filter.data)){
-    sample.df = sample.df[!rownames(sample.df) %in% filter.data,]
+
+  if (!is.null(filter.genes)){
+    removed.genes <- -grep(rownames(all.samples.matrix), pattern = filter.genes, perl = TRUE)
+    if(length(removed.genes) > 0) {
+      all.samples.matrix = all.samples.matrix[-grep(rownames(all.samples.matrix), pattern = filter.genes, perl = TRUE),]
+    }
   }
 
   # Filter out low quality genes
-  sample.df = sample.df[rowSums(sample.df >= min.exp) >= min.features,]
-  sample.df <- as.data.frame(sample.df)
+  all.samples.matrix = all.samples.matrix[Matrix::rowSums(all.samples.matrix >= min.exp) >= min.features, ]
 
   # Filter out low quality features
-  indices <- which(apply(sample.df, 2, function(x) sum(x > 0)) < unique.genes)
+  indices <- which(apply(all.samples.matrix, 2, function(x) sum(x > 0)) < unique.genes)
   if (length(indices) > 0){
-    filtered.sample.df <- sample.df[, -indices]
-  } else {
-    filtered.sample.df <- sample.df
+    all.samples.matrix <- all.samples.matrix[, -indices]
   }
-  return(filtered.sample.df)
+  return(all.samples.matrix)
 }
 
-#'  pca of expression data
+#' Collect data from bioMmRt
 #'
-#' @description This function is used to  the first two principal components of an expression dataset, or a comparison
-#' between raw expression and corrected expression data.
-#' @param df1 Expression dataset 1
-#' @param df2 Expression dataset 2
-#' @param samples Vector of replicate numbers of length ncol(filtered)
-#' @param ... arguments passed to plotPCA function from scater
-#' @importFrom scater newSCESet plotPCA
-#' @importFrom cowplot plot_grid
-#' @importFrom Biobase pData
-#' @return Scatter plot of PC1 and PC2.
-pca_plot <- function(df1, df2 = NULL, samples, ...){
-  sce.raw = newSCESet(countData = df1)
-  pData(sce.raw)$replicate = samples
-  p1 <- plotPCA(sce.raw, pca_data_input = "counts", colour_by = "replicate", ...)
-  if (!is.null(df2)) {
-    sce.batch.corr = newSCESet(countData = df2)
-    pData(sce.batch.corr)$replicate = samples
-    p2 <- plotPCA(sce.batch.corr, pca_data_input="counts", colour_by = "replicate", ...)
-    p <- plot_grid(p1, p2, nrow = 2, label_size = 10,
-                            labels = c(paste("      raw data"),
-                                       paste("batch corrected")))
-  } else {
-    p <- p1
+#' @description function used to collect data from biomaRt and save to data.frame
+#' @export
+#' @param gene.list character vector of gene ids
+#' @param organism select organism (default hsapiens)
+#' @param filters select filters from input data.frame
+#' @param attributes select attributes to collect from biomaRt
+collect_gene_data <- function(gene.list, organism = "hsapiens", filters = "ensembl_gene_id_version", attributes = c("ensembl_gene_id_version", "gene_biotype")) {
+  mart <- character()
+  class(mart) <- "try-error"
+  trials <- 0
+  while (class(mart) == "try-error") {
+    mart <- try(useDataset(paste(organism, "_gene_ensembl", sep = ""), useMart("ensembl", ensemblRedirect = FALSE)), silent = TRUE)
+    trials <- trials + 1
+    if (trials == 5) {
+      stop("Failed to connect to BiomaRt")
+    }
   }
-  plot(p)
+  G_list <- getBM(filters = filters, attributes = attributes, values = gene.list, mart = mart)
+  if (nrow(G_list) == 0) {
+    stop("No matches found. Check if the corect organism was selected.")
+    }
+  return(G_list)
 }
 
-#' Convert from ENSEMBL ID to HGNC symbol
+#' Convert from ENSEMBL ID to HGNC symbol or MGI symbol
 #'
-#' @description  Function used to convert ENSEMBL gene ids of an expression matrix into HGNC symbols.
+#' @description Function used to convert ENSEMBL gene ids of an expression matrix into HGNC/MGI symbols.
 #' @export
 #' @rdname convert
 #' @param df Data.frame or matrix with ENSEMBL ids as rownames.
+#' @param organism Select organism database (human, mouse)
 #' @return Data.frame or matrix with converted names.
-#' @importFrom biomaRt useDataset getBM useMart
-ensembl2hgnc <- function(df) {
+#' @importFrom biomaRt getBM useDataset useMart
+ensembl2hgnc <- function(df, organism = "human") {
   UseMethod("ensembl2hgnc")
 }
 
 #' @rdname convert
 #' @export
-ensembl2hgnc.data.frame <- function(df) {
-  mart <- useDataset("hsapiens_gene_ensembl", useMart("ensembl"))
-  G_list <- getBM(filters= "ensembl_gene_id", attributes= c("ensembl_gene_id", "hgnc_symbol"), values = rownames(df), mart = mart)
-  df <- cbind(ensembl_gene_id = rownames(df), df)
-  merged.df <- merge(G_list, df, by = "ensembl_gene_id", all = T)
-  merged.df$hgnc_symbol[which(merged.df$hgnc_symbol == "" | is.na(merged.df$hgnc_symbol))] <- merged.df$ensembl_gene_id[which(merged.df$hgnc_symbol == "" | is.na(merged.df$hgnc_symbol))]
-  merged.df <- data.frame(aggregate(x = apply(merged.df[, 3:ncol(merged.df)], 2, function(x) as.numeric(as.character(x))), by = list(merged.df$hgnc_symbol), sum, na.rm = TRUE), row.names = 1)
-  return(merged.df)
-}
+ensembl2hgnc.default <- function(df, organism = "human") {
+  mart <- character()
+  class(mart) <- "try-error"
+  trials <- 0
+  if (organism == "human") {
+    while (class(mart) == "try-error") {
+      mart <- try(useDataset("hsapiens_gene_ensembl", useMart("ensembl")), silent = TRUE)
+      trials <- trials + 1
+      if (trials == 15) {
+        stop("Failed to connect to BiomaRt")
+      }
+    }
+    G_list <- getBM(filters= "ensembl_gene_id_version", attributes = c("ensembl_gene_id_version", "hgnc_symbol"), values = rownames(df), mart = mart)
+    if (nrow(G_list) == 0) {
+      stop("No matches found. Check if the corect organism was selected.")
+    }
+    G_list$hgnc_symbol[G_list$hgnc_symbol == ""] <- G_list$ensembl_gene_id_version[G_list$hgnc_symbol == ""]
+  } else if(organism == "mouse") {
+    while (class(mart) == "try-error") {
+      mart <- try(useDataset("mmusculus_gene_ensembl", useMart("ensembl")), silent = TRUE)
+      trials <- trials + 1
+      if (trials == 15) {
+        stop("Failed to connect to BiomaRt")
+      }
+    }
+    G_list <- getBM(filters= "ensembl_gene_id_version", attributes = c("ensembl_gene_id_version", "mgi_symbol"), values = rownames(df), mart = mart)
+    if (nrow(G_list) == 0) {
+      stop("No matches found. Check if the corect organism was selected.")
+    }
+    G_list$mgi_symbol[G_list$mgi_symbol == ""] <- G_list$ensembl_gene_id_version[G_list$mgi_symbol == ""]
+  }
 
-#' @rdname convert
-#' @export
-ensembl2hgnc.matrix <- function(df) {
-  return(ensembl2hgnc.data.frame(df))
+  G_vec <- G_list[, 2]
+  names(G_vec) <- G_list[, 1]
+  df <- as.matrix(df)
+  rownames(df)[!is.na(G_vec[rownames(df)])] <- G_vec[rownames(df)[!is.na(G_vec[rownames(df)])]]
+  if (sum(duplicated(rownames(df))) > 0) {
+    df <- rowsum(df, rownames(df))
+  }
+  return(as.data.frame(df))
 }
 
 #' @rdname convert
@@ -241,9 +254,16 @@ ensembl2hgnc.matrix <- function(df) {
 ensembl2hgnc.list <- function(df) {
   exp.list <- list()
   for (i in 1:length(df)) {
-    exp.list[[i]] <- ensembl2hgnc(df[[i]])
+    exp.list[[i]] <- ensembl2hgnc.default(df[[i]])
   }
   return(exp.list)
+}
+
+#' @rdname convert
+#' @export
+ensembl2hgnc.spaceST <- function(spST) {
+  spST@expr <- ensembl2hgnc.default(spST@expr)
+  return(spST)
 }
 
 #' Cast merged data to list of matrixes
@@ -262,35 +282,6 @@ cast2list <- function(df) {
   return(exp.list)
 }
 
-#' Rename rownames of lists
-#'
-#' @description Rename colnames or rownames of list.
-#' @export
-#' @param x input list to rename element for.
-#' @param ref.list List to take names from.
-#' @param type Character specifying which names of x to change.
-#' @param ref.list.type Character specifying which names of ref.list to change.
-rename_list <- function(x, ref.list, type = "rownames", ref.list.type = "colnames") {
-  renamed.list <- list()
-  for (i in 1:length(x)) {
-    df <- x[[i]]
-    if (type == "rownames") {
-      if (ref.list.type == "colnames") {
-        rownames(df) <- colnames(ref.list[[i]])
-      } else if (ref.list.type == "rownames") {
-        rownames(df) <- rownames(ref.list[[i]])
-      }
-    } else if (type == "colnames") {
-      if (ref.list.type == "colnames") {
-        colnames(df) <- colnames(ref.list[[i]])
-      } else if (ref.list.type == "rownames") {
-        colnames(df) <- rownames(ref.list[[i]])
-      }
-    }
-    renamed.lsit[[i]] <- df
-  }
-  return(renamed.list)
-}
 
 #' Normalize using CPTK method
 #'
