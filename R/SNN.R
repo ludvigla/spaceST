@@ -51,10 +51,10 @@ BuildTopicSNN <- function(
   algorithm = 1,
   ...
 ) {
-  if (!length(object@topics) > 0) {
+  if (!length(object@lda.results) > 0) {
     stop("Error: missing topics matrix. Run topic_compute to obtain topic matrix.")
   }
-  data.use <- object@topics
+  data.use <- object@lda.results$omega
   n.cells <- nrow(x = data.use)
   if (n.cells < k.param) {
     warning("k.param set larger than number of cells. Setting k.param to number of cells - 1.")

@@ -4,10 +4,12 @@
 \alias{ST_statistics}
 \title{Quality Control statistics}
 \usage{
-ST_statistics(df)
+ST_statistics(df, delimiter = "_")
 }
 \arguments{
 \item{df}{Input gene expression data.frame}
+
+\item{delimiter}{Character separating spot coordinates in headers}
 }
 \value{
 Data.frame with unique genes per feature and transcripts per feature

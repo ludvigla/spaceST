@@ -7,7 +7,7 @@
 #' @param unique.genes The lowest number of unique genes allowed in a feature
 #' @param min.exp Integer value specifying the lowest expression value allowed at least min.features number of features (default 2)
 #' @param min.features Integer value specifying the lowest number of features with at least min.exp (default 15)
-#' @param filter.data A character vector specifying genes that should be filtered from the expression data (default RP)
+#' @param filter.genes A character vector specifying genes that should be filtered from the expression data
 #' @param batch.correct Logical specifying if data should be batch corrected
 #' @return A spaceST object containing filtered gene expression data for multiple replicates
 #' @importFrom CountClust BatchCorrectedCounts
@@ -17,8 +17,7 @@ CreatespaceSTobject <- function(
   unique.genes = 500,
   min.exp = 2,
   min.features = 15,
-  filter.data = RP,
-  batch.correct = FALSE
+  filter.genes = NULL
   ) {
   spaceST.version <- packageVersion("spaceST")
   if (!(class(raw.data) %in% c("list", "data.frame", "matrix"))) {
@@ -26,26 +25,19 @@ CreatespaceSTobject <- function(
   }
   object <- new(
     Class = "spaceST",
-    raw.data = raw.data,
     filter.settings = list(
       unique.genes = unique.genes,
       min.exp = min.exp,
       min.features = min.features,
-      filter.data = filter.data),
+      filter.genes = filter.genes),
     version = spaceST.version
   )
-  object.raw.data <- object@raw.data
-  object@expr <- merge_exp_list(
-    raw.data,unique.genes,
+  object@expr <- as(merge_exp_list(
+    raw.data, unique.genes,
     min.exp, min.features,
-    filter.data = filter.data
-  )
-  if (batch.correct){
-    object@corrected <- as.data.frame(
-      t(BatchCorrectedCounts(t(object@expr),
-                             get_coordinates(object@expr)[, 1],
-                             use_parallel = T)))
-  }
+    filter.genes = filter.genes
+  ), "dgCMatrix")
   object@coordinates <- get_coordinates(object@expr)
+  object@status.expr <- "filtered raw data"
   return(object)
 }

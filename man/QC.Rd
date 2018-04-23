@@ -6,18 +6,14 @@
 \alias{plot.QC.spaceST,spaceST-method}
 \title{Plot unique genes per feature and transcripts per feature}
 \usage{
-plot.QC.spaceST(object, dataset = "corrected", separate = F)
+plot.QC.spaceST(object, separate = F)
 
-\S4method{plot.QC.spaceST}{spaceST}(object, dataset = "corrected",
-  separate = F)
+\S4method{plot.QC.spaceST}{spaceST}(object, separate = F)
 }
 \arguments{
 \item{object}{spaceST object with expression data.}
 
-\item{dataset}{Character string specifying if the "corrected" or "raw" data should be used as input. Default
-is set to "corrected".}
-
-\item{separate}{Logical indicating whether replicates should be ploteed separately}
+\item{separate}{Logical indicating whether replicates should be ploteed separ2ately}
 }
 \value{
 Histograms of unique genes per feature and transcripts per feature distributions.

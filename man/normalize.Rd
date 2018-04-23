@@ -6,11 +6,10 @@
 \alias{NormalizespaceST,spaceST-method}
 \title{Normalize ST data}
 \usage{
-NormalizespaceST(object, method = "scran", type = "corrected", log2 = F,
-  clusters = NULL)
+NormalizespaceST(object, method = "scran", log2 = F, clusters = NULL, ...)
 
-\S4method{NormalizespaceST}{spaceST}(object, method = "cp10k",
-  type = "corrected", log2 = F, clusters = NULL)
+\S4method{NormalizespaceST}{spaceST}(object, method = "cp10k", log2 = F,
+  pcount = 1, cluster = NULL, ...)
 }
 \arguments{
 \item{object}{spaceST object with expression data to correct}
@@ -21,8 +20,6 @@ NormalizespaceST(object, method = "scran", type = "corrected", log2 = F,
 
 \item{clusters}{Integer vector specifying clusters used for normalization of large
 sce objects. Only for "scran" normalization.}
-
-\item{...}{Argumants passed to}
 }
 \value{
 Normalized data frame in slot normalized

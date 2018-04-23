@@ -2,25 +2,27 @@
 % Please edit documentation in R/utility_functions.R
 \name{ensembl2hgnc}
 \alias{ensembl2hgnc}
-\alias{ensembl2hgnc.data.frame}
-\alias{ensembl2hgnc.matrix}
+\alias{ensembl2hgnc.default}
 \alias{ensembl2hgnc.list}
-\title{Convert from ENSEMBL ID to HGNC symbol}
+\alias{ensembl2hgnc.spaceST}
+\title{Convert from ENSEMBL ID to HGNC symbol or MGI symbol}
 \usage{
-ensembl2hgnc(df)
+ensembl2hgnc(df, organism = "human")
 
-\method{ensembl2hgnc}{data.frame}(df)
-
-\method{ensembl2hgnc}{matrix}(df)
+\method{ensembl2hgnc}{default}(df, organism = "human")
 
 \method{ensembl2hgnc}{list}(df)
+
+\method{ensembl2hgnc}{spaceST}(spST)
 }
 \arguments{
 \item{df}{Data.frame or matrix with ENSEMBL ids as rownames.}
+
+\item{organism}{Select organism database (human, mouse)}
 }
 \value{
 Data.frame or matrix with converted names.
 }
 \description{
-Function used to convert ENSEMBL gene ids of an expression matrix into HGNC symbols.
+Function used to convert ENSEMBL gene ids of an expression matrix into HGNC/MGI symbols.
 }

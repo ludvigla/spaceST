@@ -7,8 +7,8 @@
 #' @param min.topics Minimum number of topics
 #' @param max.topic Maximum number of topics
 #' @param num.genes Number of genes to use for lda modelling
-#' @param type Character string specifying if the "normalized", "corrected" or "raw" data should be used as input. Default
-#' is set to "corrected"
+#' @param datatype Character string specifying if the "expr" or "norm.data" ata should be used as input. Default
+#' is set to "norm.data"
 #' @param method method passed to CellTree function
 #' @param sd.filter Standard deviation threshold
 #' @param log.scale Convert to log scale
@@ -19,7 +19,7 @@ topic_compute <- function(
   min.topic = 2,
   max.topic = 15,
   num.genes = NULL,
-  type = "corrected",
+  datatype = "norm.data",
   method = "maptpx",
   sd.filter = F,
   log.scale = F,
@@ -34,7 +34,6 @@ topic_compute.default <- function(
   min.topic = 2,
   max.topic = 15,
   num.genes = NULL,
-  type = "corrected",
   method = "maptpx",
   sd.filter = F,
   log.scale = F,
@@ -56,8 +55,7 @@ topic_compute.default <- function(
                                       method = method,
                                       sd.filter = sd.filter,
                                       log.scale = log.scale)
-  omega <- lda.results$omega
-  return(omega)
+  return(lda.results)
 }
 #' @export
 topic_compute.spaceST <- function(
@@ -65,42 +63,37 @@ topic_compute.spaceST <- function(
   min.topic = 2,
   max.topic = 15,
   num.genes = NULL,
+  datatype = "norm.data",
   method = "maptpx",
-  type = "corrected",
   sd.filter = FALSE,
   log.scale = FALSE,
   force.recalc = FALSE,
   minClusterSize = 30
 ){
-  if (length(object@corrected) > 0 & type == "corrected") {
-    df <- object@corrected
-  } else if (type == "raw") {
-    df <- object@expr
-  } else if (type == "normalized") {
-    df <- object@normalized
-  } else {
-    stop("No corrected dataset present. Set type = 'raw' if you want to use the raw data")
-  }
-  omega <- topic_compute.default(
-    df,
-    min.topic = 2,
-    max.topic = 15,
-    num.genes = NULL,
-    type = "corrected",
-    method = "maptpx",
-    sd.filter = F,
-    log.scale = F
-  )
-  object@topics <- omega
-  if (!length(object@meta.data) > 0 | force.recalc) {
+  if (!length(object@lda.results) > 0 | force.recalc) {
     if (force.recalc) {
       warning("Overwriting LDA results.")
     }
     object@meta.data <- list()
-  } else if (!length(object@meta.data) > 0 | !force.recalc) {
-    warning("LDA method has already been computed for this object. Set force.calc = TRUE if you want to overwrite the results")
+  } else if (!length(object@lda.results) > 0 | !force.recalc) {
+    stop("LDA method has already been computed for this object. Set force.calc = TRUE if you want to overwrite the results")
   }
-  object@meta.data$clusters <- topic_clusters(omega = omega, minClusterSize = minClusterSize)
+  if (datatype == "norm.data") {
+    df <- as.matrix(object@norm.data)
+  } else if (datatype == "expr") {
+    df <- as.matrix(object@expr)
+  }
+  lda.results <- topic_compute.default(
+    df,
+    min.topic = 2,
+    max.topic = 15,
+    num.genes = NULL,
+    method = "maptpx",
+    sd.filter = F,
+    log.scale = F
+  )
+  object@lda.results <- lda.results
+  object@meta.data$clusters <- topic_clusters(omega = lda.results$omega, minClusterSize = minClusterSize)
   object@meta.data$minClusterSize <- minClusterSize
   return(object)
 }

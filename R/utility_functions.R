@@ -4,12 +4,10 @@
 #' data.frame with unique genes and transcript counts for each observation, as well as the sample id
 #' @export
 #' @param df Input gene expression data.frame
+#' @param delimiter Character separating spot coordinates in headers
 #' @return Data.frame with unique genes per feature and transcripts per feature
-ST_statistics<- function(df){
-  stopifnot(
-    is.data.frame(df)
-  )
-  samples <- do.call(rbind, strsplit(colnames(df), split = "_"))[, 1]
+ST_statistics <- function(df, delimiter = "_"){
+  samples <- do.call(rbind, strsplit(colnames(df), split = delimiter))[, 1]
   unique.genes.per.feature <- apply(df, 2, function(x) sum(x > 0))
   transcripts.per.feature <- colSums(df)
   return(data.frame(unique.genes.per.feature, transcripts.per.feature, samples))
@@ -20,48 +18,29 @@ ST_statistics<- function(df){
 #' @description This function plots histograms of unique genes per feature and transcripts per featrure.
 #' @export
 #' @param df Input quality control data.frame.
-#' @param separate Should replicates be treated separately?
+#' @param separate Should replicates be seperated?
+#' @param ... parameters passed to geom_histogram
+#' @importFrom ggplot2 ggplot aes_string geom_histogram facet_grid
 #' @return Plot of histograms.
-#' @importFrom cowplot plot_grid
-#' @importFrom ggplot2 element_blank theme aes geom_histogram facet_grid scale_color_manual geom_vline element_line
-#' @importFrom scales muted
-ST_statistics.plot <- function(df, separate = F){
-  theme_none <- theme(axis.line = element_line(colour = "black"),
-                      panel.grid.major = element_blank(),
-                      panel.grid.minor = element_blank(),
-                      panel.border = element_blank(),
-                      panel.background = element_blank())
-  if (separate == T) {
-    p1 <- ggplot(df, aes(x = unique.genes.per.feature)) +
-      geom_histogram(bins = 30, fill = muted("dark blue"), color = "black") +
-      theme_none +
-      scale_color_manual(name = "", values = c(median = "black")) +
-      facet_grid(~samples)
-
-    p2 <- ggplot(df, aes(x = transcripts.per.feature)) +
-      geom_histogram(bins = 30, fill = muted("red"), color = "black") +
-      theme_none +
-      scale_color_manual(name = "", values = c(median = "black")) +
-      facet_grid(~samples)
-  } else {
-    p1 <- ggplot(df, ggplot2::aes(x = unique.genes.per.feature)) +
-      geom_histogram(bins = 30, fill = muted("dark blue"), color = "black") +
-      geom_vline(aes(xintercept = median(df$unique.genes.per.feature), colour = "median"),
-                          linetype="dashed",
-                          size=1) +
-      theme_none +
-      ggplot2::scale_color_manual(name = "", values = c(median = "black"))
-
-    p2 <- ggplot(df, aes(x = transcripts.per.feature)) +
-      geom_histogram(bins = 30, fill = muted("red"), color = "black") +
-      geom_vline(aes(xintercept = median(df$transcripts.per.feature), colour = "median"),
-                          linetype="dashed",
-                          size=1) +
-      theme_none +
-      scale_color_manual(name = "", values = c(median = "black"))
+ST_statistics_plot <- function(df, separate = F, bins = NULL, ...){
+  if (!is.null(bins)) {
+    ranges <- apply(df[, 1:2], 2, range)
+    binwidths <- round(c(ranges[2, 1] - ranges[1, 1], ranges[2, 2] - ranges[1, 2])/bins)
   }
-  p <- plot_grid(p1, p2, nrow = 2)
-  plot(p)
+  p.list <- lapply(c("unique.genes.per.feature", "transcripts.per.feature"), function(type) {
+    if (!is.null(bins)) {
+      bw <- ifelse(type == "unique.genes.per.feature", binwidths[1], binwidths[2])
+    } else {
+      bw <- NULL
+    }
+    p <- ggplot(df, aes_string(type)) +
+      geom_histogram(color = "black", fill = ifelse(type == "unique.genes.per.feature", scales::muted("red"), scales::muted("blue")), binwidth = bw)
+    if (separate) {
+      p <- p + facet_grid(~samples)
+    }
+    return(p)
+  })
+  plot(cowplot::plot_grid(plotlist = p.list))
 }
 
 #' Obtain coordinates from expression data list of expression data.frame
@@ -73,49 +52,31 @@ ST_statistics.plot <- function(df, separate = F){
 #' @param x List of expression data.frames, data.frame or matrix.
 #' @param rep Get replicate column
 #' @return Data frame with replicate numbers, x and y coordinates
-get_coordinates <- function(x, rep = TRUE) {
+get_coordinates <- function(x, delimiter = "_") {
   UseMethod("get_coordinates")
 }
 
 #' @rdname coordinates
 #' @export
-get_coordinates.matrix <- function(x, rep = TRUE){
-  get_coordinates.data.frame(x, rep = TRUE)
+get_coordinates.default <- function(x, delimiter = "_"){
+  coords <- do.call(rbind, strsplit(colnames(x), split = delimiter))
+  colnames(coords) <- c("replicate", "x", "y")
+  coords <- data.frame(coords, stringsAsFactors = F)
+  coords$x <- as.numeric(coords$x)
+  coords$y <- as.numeric(coords$y)
+  return(coords)
 }
 
 #' @rdname coordinates
 #' @export
-get_coordinates.data.frame <- function(x, rep = TRUE){
-    ids <- colnames(x)
-    coords <- as.data.frame(do.call(rbind, strsplit(ids, split = "_")))
-    coords[, 2] <- as.numeric(as.character(coords[, 2]))
-    coords[, 3] <- as.numeric(as.character(coords[, 3]))
-    colnames(coords) <- c("replicate", "x", "y")
-    if (rep) {
-      return(coords)
-    } else {
-      return(coords[, 2:3])
-    }
+get_coordinates.spaceST <- function(x, delimiter = "_"){
+  x@coordinates
 }
 
 #' @rdname coordinates
 #' @export
-get_coordinates.spaceST <- function(x, rep = TRUE){
-  if (nrow(x@corrected) == 0) {
-    get_coordinates.data.frame(x@expr, rep = rep)
-  } else {
-    get_coordinates.data.frame(x@corrected, rep = rep)
-  }
-}
-
-#' @rdname coordinates
-#' @export
-get_coordinates.list <- function(x, rep = TRUE) {
-  coords_list <- list()
-  for (i in 1:length(x)) {
-    coords_list[[i]] <- get_coordinates(x[[i]], rep = rep)
-  }
-  return(as.data.frame(do.call(rbind, coords_list)))
+get_coordinates.dgCMatrix <- function(x, delimiter = "_"){
+  get_coordinates.default(x, delimiter = delimiter)
 }
 
 #' Merge and filter expression datasets
@@ -137,14 +98,14 @@ merge_exp_list <- function(x,
                   min.features = 0,
                   filter.genes = NULL){
   if (class(x) == "list") {
-    df.A <- x[[1]]
+    df.A <- as.matrix(x[[1]])
     for (i in 2:length(x)){
-      df.B <- x[[i]]
+      df.B <- as.matrix(x[[i]])
       df.A <- data.frame(merge(df.A, df.B, by = "row.names", all = TRUE), row.names = 1)
     }
     df.A[is.na(df.A)] <- 0
     all.samples.matrix <- as(as.matrix(df.A), "dgCMatrix")
-  } else if (class(x) %in% c("data.frame", "matrix")) {
+  } else {
     all.samples.matrix <- as(as.matrix(x), "dgCMatrix")
   }
 
@@ -266,31 +227,10 @@ ensembl2hgnc.spaceST <- function(spST) {
   return(spST)
 }
 
-#' Cast merged data to list of matrixes
+#' Calculate cp10k
 #'
-#' @description Cast any merged data.frame/matrix into a list of matrices for each replicate.
-#' @export
-#' @param df Merged data.frame/matrix with spaceST headers, i.e. features as columns.
-#' @return List of matrices.
-cast2list <- function(df) {
-  samples <- as.integer(as.character(get_coordinates(df)[, 1]))
-  exp.list <- list()
-  for (i in unique(samples)) {
-    indices <- (1:ncol(df))[which(samples == i)]
-    exp.list[[i]] <- df[, indices]
-  }
-  return(exp.list)
+calc_cp10k <- function(df) {
+  norm.factors <- colSums(df)
+  norm.data <- t(t(df)/norm.factors*1e4)
 }
 
-
-#' Normalize using CPTK method
-#'
-#' @description Function used to normalize ST data using Counts Per Ten thousand method
-#' @export
-#' @rdname norm
-#' @param expr_mat Expression data.frame or matrix.
-#' @return Normalized data.frame or matrix.
-calc_cpm <- function (expr_mat) {
-  norm_factor <- colSums(expr_mat)
-  return(t(t(expr_mat)/norm_factor)*10^4)
-}

@@ -12,8 +12,6 @@ multiple tissue sections
 \section{Slots}{
 
 \describe{
-\item{\code{raw.data}}{Raw input data}
-
 \item{\code{expr}}{A data.frame with filtered gene expression data}
 
 \item{\code{corrected}}{A data.frame with batch corrected gene expressiond data}

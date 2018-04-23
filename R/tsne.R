@@ -26,8 +26,11 @@ RunTSNEspaceST <- function(
   clusters = NULL
 ) {
   if (use.dims == "topics") {
-    stopifnot(length(object@topics) > 0)
-    df <- object@topics
+    stopifnot(length(object@lda.results) > 0)
+    df <- object@lda.results$omega
+  } else if (use.dims == "pca") {
+    stopifnot(length(object@reducedDims) > 0)
+    df <- object@reducedDims
   }
   # TODO: addmethods
   set.seed(seed)

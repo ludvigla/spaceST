@@ -12,7 +12,7 @@
 #' @param edge.size Select size for edges in network
 #' @param ... Parameters passed to ggnet2
 #' @importFrom ggnet ggnet2
-#' @importFrom igraph graph.adjacency `V<-` E induced_subgraph
+#' @importFrom igraph graph.adjacency E induced_subgraph
 #' @export
 SpatialNetwork <- function(
   object,

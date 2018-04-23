@@ -2,21 +2,18 @@
 % Please edit documentation in R/utility_functions.R
 \name{get_coordinates}
 \alias{get_coordinates}
-\alias{get_coordinates.matrix}
-\alias{get_coordinates.data.frame}
+\alias{get_coordinates.default}
 \alias{get_coordinates.spaceST}
-\alias{get_coordinates.list}
+\alias{get_coordinates.dgCMatrix}
 \title{get_coordinates: obtain spatial coordinates}
 \usage{
-get_coordinates(x, rep = TRUE)
+get_coordinates(x, delimiter = "_")
 
-\method{get_coordinates}{matrix}(x, rep = TRUE)
+\method{get_coordinates}{default}(x, delimiter = "_")
 
-\method{get_coordinates}{data.frame}(x, rep = TRUE)
+\method{get_coordinates}{spaceST}(x, delimiter = "_")
 
-\method{get_coordinates}{spaceST}(x, rep = TRUE)
-
-\method{get_coordinates}{list}(x, rep = TRUE)
+\method{get_coordinates}{dgCMatrix}(x, delimiter = "_")
 }
 \arguments{
 \item{x}{List of expression data.frames, data.frame or matrix.}

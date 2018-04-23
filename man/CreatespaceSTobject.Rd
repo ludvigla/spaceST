@@ -5,7 +5,7 @@
 \title{Filter ST expression data.}
 \usage{
 CreatespaceSTobject(raw.data, unique.genes = 500, min.exp = 2,
-  min.features = 15, filter.data = RP, batch.correct = FALSE)
+  min.features = 15, filter.genes = NULL)
 }
 \arguments{
 \item{raw.data}{A list of expression matrices/data.frames with genes as rows and feature coordinates as columns
@@ -17,7 +17,7 @@ Required structure of column names is: "replicate number_x_y"}
 
 \item{min.features}{Integer value specifying the lowest number of features with at least min.exp (default 15)}
 
-\item{filter.data}{A character vector specifying genes that should be filtered from the expression data (default RP)}
+\item{filter.genes}{A character vector specifying genes that should be filtered from the expression data}
 
 \item{batch.correct}{Logical specifying if data should be batch corrected}
 }

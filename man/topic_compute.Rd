@@ -6,8 +6,8 @@
 TODO: fix bbug in Set dataset "raw" for single df}
 \usage{
 topic_compute(object, min.topic = 2, max.topic = 15, num.genes = NULL,
-  type = "corrected", method = "maptpx", sd.filter = F, log.scale = F,
-  force.recalc = F, minClusterSize = 30)
+  datatype = "norm.data", method = "maptpx", sd.filter = F,
+  log.scale = F, force.recalc = F, minClusterSize = 30)
 }
 \arguments{
 \item{object}{spaceST object with expression data or data.frame}
@@ -16,8 +16,8 @@ topic_compute(object, min.topic = 2, max.topic = 15, num.genes = NULL,
 
 \item{num.genes}{Number of genes to use for lda modelling}
 
-\item{type}{Character string specifying if the "normalized", "corrected" or "raw" data should be used as input. Default
-is set to "corrected"}
+\item{datatype}{Character string specifying if the "expr" or "norm.data" ata should be used as input. Default
+is set to "norm.data"}
 
 \item{method}{method passed to CellTree function}
 

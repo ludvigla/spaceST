@@ -4,7 +4,8 @@
 \alias{merge_exp_list}
 \title{Merge and filter expression datasets}
 \usage{
-merge_exp_list(x, unique.genes, min.exp, min.features, filter.data)
+merge_exp_list(x, unique.genes = 0, min.exp = 0, min.features = 0,
+  filter.genes = NULL)
 }
 \arguments{
 \item{x}{List of exrpression data frames, data.frame or matrix.}
@@ -15,7 +16,7 @@ merge_exp_list(x, unique.genes, min.exp, min.features, filter.data)
 
 \item{min.features}{Integer value specifying number of features allowed with min.exp count.}
 
-\item{filter.data}{Character vector specifying genes that should be filtered out.}
+\item{filter.genes}{Character vector specifying genes that should be filtered out.}
 }
 \value{
 Merged and filtered dataframe.

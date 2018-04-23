@@ -11,11 +11,11 @@ batch.correct(object)
 \S4method{batch.correct}{spaceST}(object)
 }
 \arguments{
-\item{object}{spaceST object with expression data to correct}
+\item{object}{object of class spaceST}
 }
 \value{
 Batch corrected data frame in slot corrected
 }
 \description{
-Batch correction of spaceST data
+Run batch correction of replicate sections
 }

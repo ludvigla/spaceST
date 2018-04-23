@@ -5,8 +5,8 @@
 \title{Visualize spatial heatmaps}
 \usage{
 spatial.heatmap(x, coords, raster, HE = NULL, alpha = 0.5, size = 1,
-  mirror_x = F, mirror_y = F, title = NULL, shift_x = -1,
-  shift_y = 35, lim_x = c(0, 32), lim_y = c(0, 34), max = 1)
+  mirror_x = F, mirror_y = F, title = NULL, lim_x = c(0, 32),
+  lim_y = c(0, 34), max = 1)
 }
 \arguments{
 \item{x}{Vector with numerical values with the same length as coords. Values could represent gene expresion values,
