@@ -240,6 +240,8 @@ scale2range <- function(x, a, b){
 #'
 #' @description returns a palette using the coloRamp function
 #' @param palette select palette [options: "GnBu", "the.cols", "Spectral", "offwhite.to.black"]
+#' @importFrom RColorBrewer brewer.pal
+#' @importFrom grDevices colorRamp
 #' @importFrom viridis inferno magma plasma
 palette.select <- function(palette) {
   palettes <- list(

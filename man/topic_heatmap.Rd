@@ -2,7 +2,7 @@
 % Please edit documentation in R/topic_functions.R
 \name{topic_heatmap}
 \alias{topic_heatmap}
-\title{Plot heatmap of lda results}
+\title{Plot heatmap of lda results.}
 \usage{
 topic_heatmap(df, method.dist = "euclidean", method.tree = "ward.D2",
   minClusterSize = 30)
@@ -14,7 +14,7 @@ topic_heatmap(df, method.dist = "euclidean", method.tree = "ward.D2",
 
 \item{method.tree}{Set clustering method.}
 
-\item{minClusterSize}{Minimum cluster size}
+\item{minClusterSize}{Minimum cluster size.}
 }
 \value{
 Heatmap of topic results.
@@ -22,3 +22,8 @@ Heatmap of topic results.
 \description{
 This function is used to plot a heatmap of lda results.
 }
+\seealso{
+Other topic functions: \code{\link{topic_clusters}},
+  \code{\link{topic_compute}}
+}
+\concept{topic functions}

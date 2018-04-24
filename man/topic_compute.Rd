@@ -2,35 +2,44 @@
 % Please edit documentation in R/topic_functions.R
 \name{topic_compute}
 \alias{topic_compute}
-\title{Helper function to compute lda using cellTree package
-TODO: fix bbug in Set dataset "raw" for single df}
+\title{Helper function to compute lda using cellTree package.}
 \usage{
 topic_compute(object, min.topic = 2, max.topic = 15, num.genes = NULL,
   datatype = "norm.data", method = "maptpx", sd.filter = F,
   log.scale = F, force.recalc = F, minClusterSize = 30)
 }
 \arguments{
-\item{object}{spaceST object with expression data or data.frame}
+\item{object}{Object of class spaceST.}
 
-\item{max.topic}{Maximum number of topics}
+\item{max.topic}{Maximum number of topics.}
 
-\item{num.genes}{Number of genes to use for lda modelling}
+\item{num.genes}{Number of genes to use for lda modelling.}
 
 \item{datatype}{Character string specifying if the "expr" or "norm.data" ata should be used as input. Default
-is set to "norm.data"}
+is set to "norm.data".}
 
-\item{method}{method passed to CellTree function}
+\item{method}{Method passed to CellTree function.}
 
-\item{sd.filter}{Standard deviation threshold}
+\item{sd.filter}{Standard deviation threshold.}
 
-\item{log.scale}{Convert to log scale}
+\item{log.scale}{Convert to log scale.}
 
-\item{min.topics}{Minimum number of topics}
+\item{min.topics, max.topics}{Integer values specifying min and max number of topics in the "maptpx" model.}
 }
 \value{
 Topic matrix
 }
 \description{
 This helper function is used to compute topics for an expression dataset using lda modelling
-from cellTree package
+from cellTree package.
 }
+\references{
+\url{https://bioconductor.org/packages/release/bioc/html/cellTree.html}
+}
+\seealso{
+\link[cellTree]{compute.lda}
+
+Other topic functions: \code{\link{topic_clusters}},
+  \code{\link{topic_heatmap}}
+}
+\concept{topic functions}

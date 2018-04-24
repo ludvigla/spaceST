@@ -32,9 +32,6 @@ Imports:
     ggnet,
     gplots,
     gtable,
-    htmltools,
-    htmlwidgets,
-    igraph,
     jpeg,
     plotly,
     raster,
@@ -42,7 +39,9 @@ Imports:
     scales,
     scater,
     scran,
-    sp,
-    threejs,
     viridis,
-    xCell
+    xCell,
+    SingleCellExperiment,
+    deldir,
+    igraph,
+    magrittr

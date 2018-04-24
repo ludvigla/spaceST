@@ -1,19 +1,22 @@
-#' Helper function to compute lda using cellTree package
-#'TODO: fix bbug in Set dataset "raw" for single df
+#' Helper function to compute lda using cellTree package.
+#'
 #' @description This helper function is used to compute topics for an expression dataset using lda modelling
-#' from cellTree package
-#' @export
-#' @param object spaceST object with expression data or data.frame
-#' @param min.topics Minimum number of topics
-#' @param max.topic Maximum number of topics
-#' @param num.genes Number of genes to use for lda modelling
+#' from cellTree package.
+#' @param object Object of class spaceST.
+#' @param min.topics,max.topics Integer values specifying min and max number of topics in the "maptpx" model.
+#' @param max.topic Maximum number of topics.
+#' @param num.genes Number of genes to use for lda modelling.
 #' @param datatype Character string specifying if the "expr" or "norm.data" ata should be used as input. Default
-#' is set to "norm.data"
-#' @param method method passed to CellTree function
-#' @param sd.filter Standard deviation threshold
-#' @param log.scale Convert to log scale
+#' is set to "norm.data".
+#' @param method Method passed to CellTree function.
+#' @param sd.filter Standard deviation threshold.
+#' @param log.scale Convert to log scale.
+#' @seealso \link[cellTree]{compute.lda}
+#' @references \url{https://bioconductor.org/packages/release/bioc/html/cellTree.html}
+#' @family topic functions
 #' @importFrom cellTree compute.lda
 #' @return Topic matrix
+#' @export
 topic_compute <- function(
   object,
   min.topic = 2,
@@ -98,7 +101,7 @@ topic_compute.spaceST <- function(
   return(object)
 }
 
-#' Calculate clusters based on topics
+#' Calculate clusters based on topics.
 #'
 #' @description This function is used to cluster features based on a topics matrix.
 #' @export
@@ -106,6 +109,7 @@ topic_compute.spaceST <- function(
 #' @param method.dist Set distance method.
 #' @param method.tree Set clustering method.
 #' @param minClusterSize Integer value specifying the minimum cluster size allowed.
+#' @family topic functions
 #' @return Integer vector specifying cluster identity of each feature.
 topic_clusters <- function(omega, method.dist = "euclidean", method.tree = "ward.D2", minClusterSize = 30){
   my.dist = dist(omega, method = method.dist)
@@ -114,15 +118,16 @@ topic_clusters <- function(omega, method.dist = "euclidean", method.tree = "ward
   return(clusters)
 }
 
-#' Plot heatmap of lda results
+#' Plot heatmap of lda results.
 #'
 #' @description This function is used to plot a heatmap of lda results.
 #' @export
 #' @param df Topic data.frame (omega) or "topics" class object.
 #' @param method.dist Set distance method.
 #' @param method.tree Set clustering method.
-#' @param minClusterSize Minimum cluster size
+#' @param minClusterSize Minimum cluster size.
 #' @importFrom gplots heatmap.2
+#' @family topic functions
 #' @return Heatmap of topic results.
 topic_heatmap <- function(df, method.dist = "euclidean", method.tree = "ward.D2", minClusterSize = 30){
   stopifnot(class(df) == "data.frame" | class(df) == "matrix" | class(df) == "topics")
@@ -172,84 +177,25 @@ topic_heatmap <- function(df, method.dist = "euclidean", method.tree = "ward.D2"
     ColSideColors = clusters.col)
 }
 
-#' Compute cluster matrix
+#' Compute cluster matrix.
 #'
 #' @description This function is used to pool clustered features by adding the gene expression values within each cluster.
-#' @export
-#' @param df Expression data used to compute topics which will be pooled using cluster vector.
-#' @param omega Topic data.frame (omega is used to calculate clusters on the fly using the topic.clusters function)
-#' @param clusters Integer vector specifying cluster identity of each feature (if "clusters" is specified, the "omega" parameter is not needed).
+#' @param object Expression data.frame, matrix or object of class spaceST.
+#' @param clusters Integer vector specifying cluster identity of each feature.
 #' @return Integer vector specifying cluster identity of each feature.
-topic_cluster_matrix <- function(df, omega = NULL, clusters = NULL){
+#' @export
+cluster_matrix.default <- function(object, clusters = NULL){
   if (!(class(df) %in% c("data.frame", "matrix"))){
     stop("Wrong input format.")
   }
-  #coordinates <- colnames(df)
-  if (is.null(clusters) & is.null(omega)){
-    stop("Either omega or clusters have to be specified.")
-  }
-  if (!is.null(clusters) & !is.null(omega)){
-    print("Both omega and clusters have been specified. Chosing clusters...")
-  }
-  if (is.null(clusters) & !is.null(omega)){
-    clusters = topic.clusters(omega)
-  }
-  clust.matrix <- rowsum(t(df), clusters)
+  clust.matrix <- rowsum(t(object), clusters)
   clust.matrix <- as.data.frame(t(clust.matrix))
-  colnames(clust.matrix) <- paste(rep("c", length(unique(clusters))), 1:length(unique(clusters)), sep = "")
+  colnames(clust.matrix) <- paste("c", 1:length(unique(clusters)), sep = "")
   return(clust.matrix)
 }
-
-#' QC plot for pooled data
 #'
-#' @description This function is used to plot a comparison of the number of unique genes before and after pooling.
 #' @export
-#' @param expr Expression data used for clustering.
-#' @param clust.df Cluster matrix obtained with topic.cluster.matrix function.
-#' @param type Set type to compare, options; "genes", "transcripts"
-#' @return Comparison plot between the number of unique genes in pooled clusters vs features.
-topic_cluster_QC_plot <- function(expr, clust.df, type = "genes"){
-  if (!(class(expr) %in% c("data.frame", "matrix"))){
-    stop("Wrong input format of expr.")
-  }
-  if (!(class(clust.df) %in% c("data.frame", "matrix"))){
-    stop("Wrong input format of clust.df.")
-  }
-
-  if (type == "genes"){
-    count.feature.df <- data.frame(apply(expr, 2, function(x) sum(x > 0)), as.factor(rep("feature", ncol(expr))))
-    colnames(count.feature.df) <- c("count", "condition")
-
-    count.clustered.df <- data.frame(apply(clust.df, 2, function(x) sum(x > 0)), as.factor(rep("clusters", ncol(clust.df))))
-    colnames(count.clustered.df) <- c("count", "condition")
-
-    counts.df <- rbind(count.feature.df, count.clustered.df)
-  }
-  if (type == "transcripts"){
-    count.feature.df <- data.frame(colSums(expr), as.factor(rep("features", ncol(expr))))
-    colnames(count.feature.df) <- c("count", "condition")
-
-    count.clustered.df <- data.frame(colSums(clust.df), as.factor(rep("clusters", ncol(clust.df))))
-    colnames(count.clustered.df) <- c("count", "condition")
-
-    counts.df <- rbind(count.feature.df, count.clustered.df)
-  }
-
-  p <- ggplot2::ggplot(counts.df, ggplot2::aes(x = condition, y = count, fill = condition)) +
-    ggplot2::geom_violin(scale = "width") +
-    ggplot2::geom_boxplot(width = .1) +
-    ggplot2::coord_flip() +
-    ggplot2::facet_grid(~condition,scales='free') +
-    ggplot2::theme_bw() +
-    ggplot2::theme(axis.title.y = ggplot2::element_blank(),
-                   axis.text.y = ggplot2::element_blank(),
-                   axis.ticks.y = ggplot2::element_blank(),
-                   axis.text.x = ggplot2::element_text(angle = 60, vjust = 0.5)) +
-    ggplot2::scale_fill_manual(values = c("#009E73", "#56B4E9"))
-  if (type == "genes"){
-    p <- p + ggplot2::labs(y = "number of unique genes")
-  } else if (type == "transcripts"){
-    p <- p + ggplot2::labs(y = "number of transcripts")
-  }
-  return(p)
+cluster.matrix.spaceST <- function(object, clusters = NULL){
+  stopifnot(class(df) == "spaceST")
+  clust.matrix <- cluster_matrix.default(object@expr, ifelse(is.null(clusters), object@meta.data$clusters, clusters))
 }

@@ -1,23 +1,25 @@
-#' Filter ST expression data.
+#' Initiialize and setup the spaceST object
 #'
-#' @description This function is used to filter ST expression data used for 3D analysis. Features with low number of unique
-#' genes and genes with low expression values will be removed. By default, ribosomal proteins and MALAT1 genes are also removed
-#' @param raw.data A list of expression matrices/data.frames with genes as rows and feature coordinates as columns
-#' Required structure of column names is: "replicate number_x_y"
-#' @param unique.genes The lowest number of unique genes allowed in a feature
-#' @param min.exp Integer value specifying the lowest expression value allowed at least min.features number of features (default 2)
-#' @param min.features Integer value specifying the lowest number of features with at least min.exp (default 15)
-#' @param filter.genes A character vector specifying genes that should be filtered from the expression data
-#' @param batch.correct Logical specifying if data should be batch corrected
-#' @return A spaceST object containing filtered gene expression data for multiple replicates
+#' Initialized the spaceST object from an expression matrix with genes as rows and array coordinates as columns. When the object is initialized,
+#' some optional filtering settings can be applied to remove genes and/or spots of low quality.
+#
+#' @param raw.data A list of expression matrices/data.frames with genes as rows and feature coordinates as columns.
+#' Headers should be formatted with a unique symbol, x, and y coordinate seperated by a delimiter.
+#' @param unique.genes The lowest number of unique genes allowed in a feature.
+#' @param min.exp Integer value specifying the lowest expression value allowed at least min.features number of features.
+#' @param min.features Integer value specifying the lowest number of features with at least min.exp.
+#' @param filter.genes A character vector specifying genes that should be filtered from the expression data.
+#' @param delimiter Delimiter specifying header format.
+#' @return A spaceST object containing a merged expression matrix of gene expression counts.
 #' @importFrom CountClust BatchCorrectedCounts
 #' @export
 CreatespaceSTobject <- function(
   raw.data,
-  unique.genes = 500,
-  min.exp = 2,
-  min.features = 15,
-  filter.genes = NULL
+  unique.genes = 0,
+  min.exp = 0,
+  min.features = 0,
+  filter.genes = NULL,
+  delimiter = "_"
   ) {
   spaceST.version <- packageVersion("spaceST")
   if (!(class(raw.data) %in% c("list", "data.frame", "matrix"))) {
@@ -37,7 +39,7 @@ CreatespaceSTobject <- function(
     min.exp, min.features,
     filter.genes = filter.genes
   ), "dgCMatrix")
-  object@coordinates <- get_coordinates(object@expr)
+  object@coordinates <- get_coordinates(object@expr, delimiter)
   object@status.expr <- "filtered raw data"
   return(object)
 }

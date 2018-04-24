@@ -2,29 +2,29 @@
 % Please edit documentation in R/preprocessing.R
 \name{CreatespaceSTobject}
 \alias{CreatespaceSTobject}
-\title{Filter ST expression data.}
+\title{Initiialize and setup the spaceST object}
 \usage{
-CreatespaceSTobject(raw.data, unique.genes = 500, min.exp = 2,
-  min.features = 15, filter.genes = NULL)
+CreatespaceSTobject(raw.data, unique.genes = 0, min.exp = 0,
+  min.features = 0, filter.genes = NULL, delimiter = "_")
 }
 \arguments{
-\item{raw.data}{A list of expression matrices/data.frames with genes as rows and feature coordinates as columns
-Required structure of column names is: "replicate number_x_y"}
+\item{raw.data}{A list of expression matrices/data.frames with genes as rows and feature coordinates as columns.
+Headers should be formatted with a unique symbol, x, and y coordinate seperated by a delimiter.}
 
-\item{unique.genes}{The lowest number of unique genes allowed in a feature}
+\item{unique.genes}{The lowest number of unique genes allowed in a feature.}
 
-\item{min.exp}{Integer value specifying the lowest expression value allowed at least min.features number of features (default 2)}
+\item{min.exp}{Integer value specifying the lowest expression value allowed at least min.features number of features.}
 
-\item{min.features}{Integer value specifying the lowest number of features with at least min.exp (default 15)}
+\item{min.features}{Integer value specifying the lowest number of features with at least min.exp.}
 
-\item{filter.genes}{A character vector specifying genes that should be filtered from the expression data}
+\item{filter.genes}{A character vector specifying genes that should be filtered from the expression data.}
 
-\item{batch.correct}{Logical specifying if data should be batch corrected}
+\item{delimiter}{Delimiter specifying header format.}
 }
 \value{
-A spaceST object containing filtered gene expression data for multiple replicates
+A spaceST object containing a merged expression matrix of gene expression counts.
 }
 \description{
-This function is used to filter ST expression data used for 3D analysis. Features with low number of unique
-genes and genes with low expression values will be removed. By default, ribosomal proteins and MALAT1 genes are also removed
+Initialized the spaceST object from an expression matrix with genes as rows and array coordinates as columns. When the object is initialized,
+some optional filtering settings can be applied to remove genes and/or spots of low quality.
 }

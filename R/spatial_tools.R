@@ -1,95 +1,84 @@
 #' Visualize spatial heatmaps
 #'
-#' @description Visualize spatial features on top of HE image.
-#' @param x Vector with numerical values with the same length as coords. Values could represent gene expresion values,
-#' topic proportions, xCell scores etc.
-#' @param coords data.frame with feature x, y coordinates.
-#' @param raster data.frame with x, y coordinates and grid cell numbers produced with the scatter_rasterize() function.
-#' @param HE path to HE image
-#' @param alpha set alpha level of heatmap
-#' @param size set size of points
-#' @param mirror_x flip along x axis
-#' @param mirror_y flip along y axis
+#' Generates a scatter plot of array spots colored by some value.
+#' @param object Object of class spaceST.
+#' @param value Target vector to visualize. This value can be chosen from any slot of the spaceST object
+#' containing data linked to array spots.
+#' @param type Select dataset where the value can be found [options: "expr", "norm.data", "pca"]
+#' @param HE.list List of paths to HE images in jpeg format that should be used as a background for the
+#' spatial heatmap.
+#' @param palette Color palette used for spatial heamtap [options: ""expr", "green.to.blue", "spectral", "offwhite.to.black", "
+#' "viridis", "magma", "plasma", "cividis"]
+#' @param invert.heatmap Invert color gradient.
+#' @param hide.legend Exclude legend.
+#' @param ... Parameters passed to geom_point.
 #' @importFrom grid rasterGrob
 #' @importFrom jpeg readJPEG
 #' @importFrom ggplot2 ggplot geom_point annotation_custom theme element_blank
-#' @return Heatmap of spatially distributed scores.
+#' @rdname heatmaps
 #' @export
-spatial.heatmap <- function(x,
-                            coords,
-                            raster,
-                            HE = NULL,
-                            alpha = 0.5,
-                            size = 1,
-                            mirror_x = F,
-                            mirror_y = F,
-                            title = NULL,
-                            lim_x = c(0, 32),
-                            lim_y = c(0, 34),
-                            max = 1) {
-  stopifnot(is.numeric(x) | is.integer(x),
-            is.data.frame(coords),
-            is.data.frame(raster))
-  if (is.character(HE)) {
-    stopifnot(file.exists(HE))
-  }
-  score.df <- cbind(coords, x)
-  colnames(score.df) <- c("x", "y", "val")
-  score.df <- interpolate_2D_data(score.df, raster, x = as.numeric(colnames(raster)[1]), y = as.numeric(colnames(raster)[2]))
-  if (mirror_x) {
-    score.df$x <- -score.df$x
-  }
-  if (mirror_y) {
-    score.df$y <- -score.df$y
-  }
-  p <- ggplot(score.df, aes(x = x, y = y, color = val))
-  if (!is.null(HE)) {
-    HE_img = readJPEG(HE)
-    g <- rasterGrob(HE_img, width = unit(1, "npc"), height = unit(1, "npc"), interpolate = TRUE)
-    p <- p + annotation_custom(g, -Inf, Inf, -Inf, Inf) +
-      geom_point(alpha = alpha, size = size)
+spatial.heatmap <- function(
+  object,
+  value,
+  type = "expr",
+  HE.list = NULL,
+  palette = "spectral",
+  invert.heatmap = FALSE,
+  hide.legend = FALSE,
+  ...
+) {
+  stopifnot(class(object) == "spaceST")
+  if (type == "expr") {
+    val = object@expr[value, ]
+  } else if (type == "norm.data") {
+    val = object@norm.data[value, ]
+  } else if (type == "pca") {
+    val = object@reducedDims[, value]
   } else {
-    p <- p + geom_point(alpha = alpha, size = size)
+    stop("type ", type, " not valid. Select one of 'expr', 'norm.data' or 'pca'")
   }
-  if (class(score.df$val) == "integer") {
-    p <- p + scale_x_continuous(limits = lim_x, expand = c(0, 0)) +
-      scale_y_continuous(limits = lim_y, expand = c(0, 0)) +
-      scale_color_brewer(palette = "set1") +
-      theme(axis.line = element_blank(),
-                     panel.grid.major = element_blank(),
-                     panel.grid.minor = element_blank(),
-                     panel.border = element_blank(),
-                     panel.background = element_blank(),
-                     axis.title.x = element_blank(),
-                     axis.text.x = element_blank(),
-                     axis.ticks.x = element_blank(),
-                     axis.title.y = element_blank(),
-                     axis.text.y = element_blank(),
-                     axis.ticks.y = element_blank())
-    plot(p)
-  } else if (class(score.df$val) == "numeric") {
-    p <- p + scale_x_continuous(limits = lim_x, expand = c(0, 0)) +
-      scale_y_continuous(limits = lim_y, expand = c(0, 0)) +
-      theme(axis.line = element_blank(),
-                     panel.grid.major = element_blank(),
-                     panel.grid.minor = element_blank(),
-                     panel.border = element_blank(),
-                     panel.background = element_blank(),
-                     axis.title.x = element_blank(),
-                     axis.text.x = element_blank(),
-                     axis.ticks.x = element_blank(),
-                     axis.title.y = element_blank(),
-                     axis.text.y = element_blank(),
-                     axis.ticks.y = element_blank()) +
-      scale_colour_gradientn(colours = c("red","#E69F00","#F0E68C","cyan","darkblue"),
-                             values=c(1, 0.8, 0.6, 0.4,0.2,0),
-                             limits = c(0, max),
-                             guide = "colorbar",
-                             na.value = "white") +
-      ggtitle(title)
-    plot(p)
+
+  # Combine array coordinates with value
+  gg.df <- data.frame(object@coordinates, val)
+  pal <- palette.select(palette)
+  reps <- unique(gg.df$replicate)
+
+  # Convert jpegs to grobs
+  if (!is.null(HE.list)) {
+    if (length(HE.list) != length(reps)) {
+      stop("Number of images in HE.list does not match number of samples.")
+    } else {
+      grobs.list <- lapply(HE.list, function(x) {
+        img <- jpeg::readJPEG(HE.list[[i]])
+        g <- rasterGrob(HE_img, width = unit(1, "npc"), height = unit(1, "npc"), interpolate = TRUE)
+        return(g)
+      })
+    }
   }
+
+  # Plot spatial heatmap
+  p.list <- lapply(1:length(reps), function(i) {
+    subset.df <- subset(gg.df, replicate == reps[i])
+    cols <- rgb(pal(seq(0, 1, length.out = 10)), maxColorValue = 255)
+    if (invert.heatmap) {
+      cols <- rev(cols)
+    }
+    p <- ggplot(subset.df, aes(x, 36 - y, color = val))
+    if (!is.null(HE.list)) {
+      p <- p + annotation_custom(grobs.list[[i]], -Inf, Inf, -Inf, Inf)
+    }
+    p <- p + geom_point(...) +
+      theme_void() +
+      labs(color = value) +
+      scale_color_gradientn(colours = cols)
+    if (hide.legend) {
+      p <- p + guides(color = FALSE)
+    }
+    return(p)
+  })
+  cowplot::plot_grid(plotlist = p.list)
 }
+
 
 #' Visualize spatial distribution of clusters
 #'
