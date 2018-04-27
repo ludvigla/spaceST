@@ -30,16 +30,11 @@ is set to "norm.data".}
 Topic matrix
 }
 \description{
-This helper function is used to compute topics for an expression dataset using lda modelling
-from cellTree package.
+This helper function is used to compute topics for an expression dataset using lda modelling from cellTree package.
 }
 \references{
 \url{https://bioconductor.org/packages/release/bioc/html/cellTree.html}
 }
 \seealso{
 \link[cellTree]{compute.lda}
-
-Other topic functions: \code{\link{topic_clusters}},
-  \code{\link{topic_heatmap}}
 }
-\concept{topic functions}

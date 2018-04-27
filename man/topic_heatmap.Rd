@@ -22,8 +22,3 @@ Heatmap of topic results.
 \description{
 This function is used to plot a heatmap of lda results.
 }
-\seealso{
-Other topic functions: \code{\link{topic_clusters}},
-  \code{\link{topic_compute}}
-}
-\concept{topic functions}

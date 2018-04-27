@@ -1,7 +1,6 @@
 #' Helper function to compute lda using cellTree package.
 #'
-#' @description This helper function is used to compute topics for an expression dataset using lda modelling
-#' from cellTree package.
+#' This helper function is used to compute topics for an expression dataset using lda modelling from cellTree package.
 #' @param object Object of class spaceST.
 #' @param min.topics,max.topics Integer values specifying min and max number of topics in the "maptpx" model.
 #' @param max.topic Maximum number of topics.
@@ -13,7 +12,6 @@
 #' @param log.scale Convert to log scale.
 #' @seealso \link[cellTree]{compute.lda}
 #' @references \url{https://bioconductor.org/packages/release/bioc/html/cellTree.html}
-#' @family topic functions
 #' @importFrom cellTree compute.lda
 #' @return Topic matrix
 #' @export
@@ -29,7 +27,7 @@ topic_compute <- function(
   force.recalc = F,
   minClusterSize = 30
 ) {
-UseMethod("topic_compute")
+  UseMethod("topic_compute")
 }
 #' @export
 topic_compute.default <- function(
@@ -54,10 +52,10 @@ topic_compute.default <- function(
   GoM.sample.df = object[high.genes,]
   K = c(min.topic:max.topic)
   lda.results = compute.lda(GoM.sample.df,
-                                      k.topics = K,
-                                      method = method,
-                                      sd.filter = sd.filter,
-                                      log.scale = log.scale)
+                            k.topics = K,
+                            method = method,
+                            sd.filter = sd.filter,
+                            log.scale = log.scale)
   return(lda.results)
 }
 #' @export
@@ -103,14 +101,13 @@ topic_compute.spaceST <- function(
 
 #' Calculate clusters based on topics.
 #'
-#' @description This function is used to cluster features based on a topics matrix.
-#' @export
+#' This function is used to cluster features based on a topics matrix.
 #' @param omega Topic data.frame.
 #' @param method.dist Set distance method.
 #' @param method.tree Set clustering method.
 #' @param minClusterSize Integer value specifying the minimum cluster size allowed.
-#' @family topic functions
 #' @return Integer vector specifying cluster identity of each feature.
+#' @export
 topic_clusters <- function(omega, method.dist = "euclidean", method.tree = "ward.D2", minClusterSize = 30){
   my.dist = dist(omega, method = method.dist)
   my.tree = hclust(my.dist, method = method.tree)
@@ -118,17 +115,17 @@ topic_clusters <- function(omega, method.dist = "euclidean", method.tree = "ward
   return(clusters)
 }
 
+
 #' Plot heatmap of lda results.
 #'
-#' @description This function is used to plot a heatmap of lda results.
-#' @export
+#' This function is used to plot a heatmap of lda results.
 #' @param df Topic data.frame (omega) or "topics" class object.
 #' @param method.dist Set distance method.
 #' @param method.tree Set clustering method.
 #' @param minClusterSize Minimum cluster size.
 #' @importFrom gplots heatmap.2
-#' @family topic functions
 #' @return Heatmap of topic results.
+#' @export
 topic_heatmap <- function(df, method.dist = "euclidean", method.tree = "ward.D2", minClusterSize = 30){
   stopifnot(class(df) == "data.frame" | class(df) == "matrix" | class(df) == "topics")
   if (class(df) == "topics"){
@@ -177,9 +174,10 @@ topic_heatmap <- function(df, method.dist = "euclidean", method.tree = "ward.D2"
     ColSideColors = clusters.col)
 }
 
+
 #' Compute cluster matrix.
 #'
-#' @description This function is used to pool clustered features by adding the gene expression values within each cluster.
+#' This function is used to pool clustered features by adding the gene expression values within each cluster.
 #' @param object Expression data.frame, matrix or object of class spaceST.
 #' @param clusters Integer vector specifying cluster identity of each feature.
 #' @return Integer vector specifying cluster identity of each feature.
@@ -193,7 +191,6 @@ cluster_matrix.default <- function(object, clusters = NULL){
   colnames(clust.matrix) <- paste("c", 1:length(unique(clusters)), sep = "")
   return(clust.matrix)
 }
-#'
 #' @export
 cluster.matrix.spaceST <- function(object, clusters = NULL){
   stopifnot(class(df) == "spaceST")

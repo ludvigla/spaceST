@@ -2,43 +2,46 @@
 % Please edit documentation in R/tesselation.R
 \name{tessViz}
 \alias{tessViz}
-\title{Plot tesselated object}
+\title{Plot tesselated object.}
 \usage{
 tessViz(object, select.columns = 1:3, xlim = c(0, 34), ylim = c(0, 36),
   scale.by.column = FALSE, datatype = "topics", add.points = F,
   outline.color = NA, bg = "black", inv.col = F, alpha = 1,
   scatter = NULL, return.list = FALSE, cell.col = "cyan",
-  cell.size = 0.01, cell.alpha = 0.1, palette = "offwhite.to.black")
+  cell.size = 0.01, cell.alpha = 0.1, palette = "offwhite.to.black",
+  max.num.cols = 20, polygon.mask = TRUE, fill.empty = FALSE)
 }
 \arguments{
-\item{object}{object of class spaceST}
+\item{object}{Sbject of class spaceST.}
 
-\item{select.columns}{select columns of target matrix [default = NULL]}
+\item{select.columns}{Select columns of target matrix [default = 1:3].}
 
-\item{xlim}{set limits of x axis [default = c(0, 36)]}
+\item{xlim}{Set limits of x axis [default = c(0, 36)].}
 
-\item{ylim}{set limits of y axis [default = c(0, 36)]}
+\item{ylim}{Set limits of y axis [default = c(0, 36)].}
 
-\item{scale.by.column}{should columns be scaled independently? [default = FALSE]}
+\item{scale.by.column}{Should columns be scaled independently? [default = FALSE].}
 
-\item{datatype}{select target matrix from spaceST object [default = "topics"]}
+\item{datatype}{Select target matrix from spaceST object [default = "topics"].}
 
-\item{add.points}{should points be added to the plot?}
+\item{add.points}{Should points be added to the plot?}
 
-\item{outline.color}{set polygon outline color [default = NA]}
+\item{outline.color}{Set polygon outline color [default = NA].}
 
-\item{bg}{select background color [default = "black"]}
+\item{bg}{Select background color [default = "black"].}
 
-\item{inv.col}{invert colors [default = FALSE]}
+\item{inv.col}{Invert colors [default = FALSE].}
 
-\item{return.list}{return list of plots instead of combining them into a grid [default = FALSE]}
+\item{return.list}{Return list of plots instead of combining them into a grid [default = FALSE].}
 
-\item{cell.col}{color of points (spots or scatter) [default = "cyan"]}
+\item{cell.col}{Color of points (spots or scatter) [default = "cyan"].}
 
-\item{cell.size}{size of points (spots or scatter) [default = 0.01]}
+\item{cell.size}{Size of points (spots or scatter) [default = 0.01].}
 
-\item{cell.alpha}{color of points (spots or scatter) [default = 0.1]}
+\item{cell.alpha}{Color of points (spots or scatter) [default = 0.1].}
+
+\item{fill.empty}{Fill empty array spots with 0 values.}
 }
 \description{
-visualize some value on an ST grid using voronoi tesselation
+Sisualize some value on an ST grid using voronoi tesselation.
 }

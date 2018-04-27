@@ -11,6 +11,11 @@
 #' "viridis", "magma", "plasma", "cividis"]
 #' @param invert.heatmap Invert color gradient.
 #' @param hide.legend Exclude legend.
+#' @param bg.black Set background color to black.
+#' @param xlim,ylim Set limits of x/y axes. [default: xlim = c(1, 34), ylim = c(1, 36)]
+#' @param labels Should plots be labeled?
+#' @param arrange Arrange plots
+#' @param ncols Number of columns in arranged plot table.
 #' @param ... Parameters passed to geom_point.
 #' @importFrom grid rasterGrob
 #' @importFrom jpeg readJPEG
@@ -25,6 +30,12 @@ spatial.heatmap <- function(
   palette = "spectral",
   invert.heatmap = FALSE,
   hide.legend = FALSE,
+  bg.black = FALSE,
+  xlim = c(1, 33),
+  ylim = c(1, 35),
+  ncols = NULL,
+  labels = T,
+  arrange = T,
   ...
 ) {
   stopifnot(class(object) == "spaceST")
@@ -34,6 +45,8 @@ spatial.heatmap <- function(
     val = object@norm.data[value, ]
   } else if (type == "pca") {
     val = object@reducedDims[, value]
+  } else if (type == "topics") {
+    val = object@lda.results$omega[, value]
   } else {
     stop("type ", type, " not valid. Select one of 'expr', 'norm.data' or 'pca'")
   }
@@ -48,8 +61,8 @@ spatial.heatmap <- function(
     if (length(HE.list) != length(reps)) {
       stop("Number of images in HE.list does not match number of samples.")
     } else {
-      grobs.list <- lapply(HE.list, function(x) {
-        img <- jpeg::readJPEG(HE.list[[i]])
+      grobs.list <- lapply(1:length(HE.list), function(i) {
+        HE_img <- jpeg::readJPEG(HE.list[[i]])
         g <- rasterGrob(HE_img, width = unit(1, "npc"), height = unit(1, "npc"), interpolate = TRUE)
         return(g)
       })
@@ -63,7 +76,9 @@ spatial.heatmap <- function(
     if (invert.heatmap) {
       cols <- rev(cols)
     }
-    p <- ggplot(subset.df, aes(x, 36 - y, color = val))
+    p <- ggplot(subset.df, aes(x, 36 - y, color = val)) +
+      scale_x_continuous(limits = xlim, expand = c(0, 0)) +
+      scale_y_continuous(limits = ylim, expand = c(0, 0))
     if (!is.null(HE.list)) {
       p <- p + annotation_custom(grobs.list[[i]], -Inf, Inf, -Inf, Inf)
     }
@@ -74,9 +89,18 @@ spatial.heatmap <- function(
     if (hide.legend) {
       p <- p + guides(color = FALSE)
     }
+    if (bg.black) {
+      p <- p + theme(plot.background = element_rect(fill = "black"),
+                     legend.text = element_text(colour = "white"),
+                     legend.title = element_text(colour = "white"))
+    }
     return(p)
   })
-  cowplot::plot_grid(plotlist = p.list)
+  if (arrange) {
+    cowplot::plot_grid(plotlist = p.list, ncol = ncols)
+  } else {
+    return(p.list)
+  }
 }
 
 

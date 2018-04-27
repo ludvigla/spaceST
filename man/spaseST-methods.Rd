@@ -3,8 +3,8 @@
 \docType{methods}
 \name{show}
 \alias{show}
-\alias{spaceST-show}
-\title{Show method for spaceST.}
+\alias{show,spaceST-methods}
+\title{Method show for spaceST class.}
 \usage{
 \S4method{show}{spaceST}(object)
 }
@@ -12,5 +12,5 @@
 \item{object}{Object of class spaceST.}
 }
 \description{
-Show method for spaceST.
+Method show for spaceST class.
 }

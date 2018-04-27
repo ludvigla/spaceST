@@ -2,20 +2,18 @@
 % Please edit documentation in R/tesselation.R
 \name{tiles2polygon}
 \alias{tiles2polygon}
-\title{Convert tiles and add color}
+\title{Convert tiles and add color.}
 \usage{
 tiles2polygon(tiles, v, xlim, ylim)
 }
 \arguments{
-\item{tiles}{tile.list object produced with the tile.list function from teh deldir package}
+\item{tiles}{tile.list object produced with the tile.list function from teh deldir package.}
 
-\item{v}{vector of colors representing some value to be visualized}
+\item{v}{vector of colors representing some value to be visualized.}
 
-\item{xlim}{set limits of x axis}
-
-\item{ylim}{set limits of y axis}
+\item{xlim, ylim}{set limits of x/y axes.}
 }
 \description{
 convert tile.list object produced with the deldir package into a data.frame structure that is
-interpretable by geom_polygon
+interpretable by geom_polygon.
 }

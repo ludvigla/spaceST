@@ -1,4 +1,7 @@
+#' space-ST methods.
 #' @import methods
+#' @param object Object of class spaceST.
+#' @name spaceST-methods
 NULL
 
 #' The spaceST class.
@@ -36,12 +39,12 @@ spaceST <- setClass(
 )
 
 
-#' Show method for spaceST.
+#' Method show for spaceST class.
 #'
 #' @param object Object of class spaceST.
-#' @aliases spaceST-show
+#' @aliases show,spaceST-methods
 #' @name show
-#' @rdname show-methods
+#' @rdname spaseST-methods
 setMethod("show", signature = "spaceST", definition = function(object) {
   cat("An object of class ", class(object), "\n\n", sep = "")
   cat("Filter settings:\n")
@@ -52,21 +55,22 @@ setMethod("show", signature = "spaceST", definition = function(object) {
 })
 
 
-#' Batch correction of spaceST data.
+#' Method batch.correct for spaceST class.
 #'
 #' Function used to run a batch correction between samples.
-#' @description Run batch correction of replicate sections.
 #' @param object Object of class spaceST.
 #' @seealso \link[countClust]{BatchCorrectedCounts}
 #' @importFrom CountClust BatchCorrectedCounts
-#' @return Batch corrected data frame in slot corrected
-#' @rdname batch.correct
+#' @return Batch corrected data frame in slot "expr".
+#' @name batch.correct
 #' @export
 setGeneric(
   name = "batch.correct",
   def = function(object) standardGeneric("batch.correct")
 )
-#' @rdname batch.correct
+#' @name batch.correct
+#' @aliases batch.correct,spaceST-methods
+#' @rdname spaceST-methods
 #' @export
 setMethod(
   f = "batch.correct",
@@ -82,7 +86,7 @@ setMethod(
 )
 
 
-#' Normalize ST data.
+#' Method NormalizespaceST ST data.
 #'
 #' Normalization of gene expression data using either counts per 10k or scran.
 #' @param object Object of class spaceST.
@@ -93,7 +97,6 @@ setMethod(
 #' expression matrix.
 #' @seealso \link[scater]{Normalize} and \link[scran]{computeSumFactors}
 #' @importFrom scran quickCluster computeSumFactors
-#' @rdname normalize
 #' @return Normalized expression data.
 #' @export
 setGeneric(name = "NormalizespaceST",
@@ -102,7 +105,9 @@ setGeneric(name = "NormalizespaceST",
                           log2 = F,
                           clusters = NULL, ...
            ) standardGeneric("NormalizespaceST"))
-#' @rdname normalize
+#' @name NormalizespaceST
+#' @aliases NormalizespaceST,spaceST-methods
+#' @rdname spaceST-methods
 #' @export
 setMethod(
   f = "NormalizespaceST",
@@ -150,17 +155,17 @@ setMethod(
 
 #' Plot unique genes per feature and transcripts per feature.
 #'
-#' his function is used to plot the unique genes per feature and transcipts per feature
+#' This function is used to plot the unique genes per feature and transcipts per feature
 #' distributions as histograms. By default, the function will take the batch corrected dataset
 #' if present.
 #' @param object Object of class spaceST.
-#' @param separate Logical indicating whether replicates should be ploteed separ2ately
-#' @rdname QC
+#' @param separate Logical indicating whether replicates should be ploteed separately.
 #' @return Histograms of unique genes per feature and transcripts per feature distributions.
 #' @export
 setGeneric("plot.QC.spaceST", function(object, separate = F) standardGeneric("plot.QC.spaceST"))
-#' @rdname QC
-#' @docType methods
+#' @name plot.QC.spaceST
+#' @aliases plot.QC.spaceST,spaceST-methods
+#' @rdname spaceST-methods
 #' @export
 setMethod("plot.QC.spaceST", "spaceST", function(object, separate = F) {
   if (class(object) != "spaceST") {
@@ -173,7 +178,7 @@ setMethod("plot.QC.spaceST", "spaceST", function(object, separate = F) {
 })
 
 
-#' PCA method.
+#' Method spPCA for spaceST class.
 #'
 #' Run PC analysis on spaceST object.
 #' @param object Object of class spaceST.
@@ -182,10 +187,12 @@ setMethod("plot.QC.spaceST", "spaceST", function(object, separate = F) {
 #' @param exprs_values Select target object to use as input for PC analysis [options: "norm.data", "expr"]
 #' @param ... Parameters passed to \link[stats]{prcomp}.
 #' @seealso \link[stats]{prcomp}
-#' @aliases spaceST-pca
 #' @export
 setGeneric("spPCA", function(object, ntop = 500, ncomponents = 2, exprs_values = "norm.data", ...) standardGeneric("spPCA"))
 #' @export
+#' @name spPCA
+#' @aliases spPCA,spaceST-methods
+#' @rdname spaceST-methods
 setMethod(
   "spPCA",
   signature = "spaceST",
@@ -207,3 +214,152 @@ setMethod(
   object@reducedDims <- pcs
   return(object)
 })
+
+
+#' Method spots.under.tissue for spaceST class.
+#'
+#' Subset spaceST object using spot selection tables from the ST spot detector.
+#' @param object Object of class spaceST.
+#' @param selection.files List of paths to selection files. The order of selections has to match the order of
+#' sample matrices used to initiate the spaceST object.
+#' @param delimiter Delimiter for expr headers.
+#' @seealso \link[CreatespaceSTobject]{spaceST}
+#' @export
+setGeneric("spots.under.tissue", function(object, selection.files, delimiter = "_") standardGeneric("spots.under.tissue"))
+#' @rdname spaceST-methods
+#' @name spots.under.tissue
+#' @aliases spots.under.tissue,spaceST-methods
+#' @export
+setMethod(
+  "spots.under.tissue",
+  signature = "spaceST",
+  definition = function(
+    object,
+    selection.files,
+    delimiter = "_"
+) {
+  stopifnot(class(object) == "spaceST")
+  reps <- unique(object@coordinates$replicate)
+  all.coords <- object@coordinates
+  expr <- as.matrix(object@expr)
+  selection.list <- lapply(1:length(reps), function(i) {
+    coords <- all.coords[all.coords$replicate == reps[i], 2:3]
+    spots <- paste(round(coords[, 1]), round(coords[, 2]))
+    alignment <- read.table(selection.files[[i]], header = T)
+    if (ncol(alignment) == 7) {
+      alignment <- subset(alignment, selected == 1)
+    }
+    alignment.spots <- paste(alignment$x, alignment$y)
+    stopifnot(sum(alignment.spots %in% spots) == sum(spots %in% alignment.spots))
+    intersecting.spots <- which(alignment.spots %in% spots)
+    spot_indices <- which(spots %in% alignment.spots)
+    subset_expr <- expr[, spot_indices]
+    alignment <- alignment[intersecting.spots, ]
+    colnames(subset_expr) <- paste(i, round(alignment$new_x, digits = 2), round(alignment$new_y, digits = 2), sep = delimiter)
+    return(subset_expr)
+  })
+  expr <- do.call(cbind, selection.list)
+  new.spST <- CreatespaceSTobject(expr, delimiter = delimiter)
+  return(new.spST)
+})
+
+
+#' Method filter for spaceST class.
+#'
+#' Apply filter to spaceST data.
+#' @param object Object of class spaceST.
+#' @param unique.genes The lowest number of unique genes allowed in a feature (spot).
+#' @param min.exp Integer value specifying the lowest expression value allowed at least min.features number of features.
+#' @param min.features Integer value specifying the lowest number of features with at least min.exp.
+#' @param filter.genes A character vector specifying genes that should be filtered from the expression data.
+#' @param delimiter Delimiter specifying header format.
+#' @export
+setGeneric("filter", function(object, unique.genes = 300, min.exp = 2, min.features = 15, filter.genes = NULL, force.filter = FALSE, delimiter = "_") standardGeneric("filter"))
+#' @name filter
+#' @aliases filter,spaceST-methods
+#' @rdname spaceST-methods
+#' @export
+setMethod(
+  "filter",
+  signature = "spaceST",
+  definition = function(
+    object,
+    unique.genes = 300,
+    min.exp = 2,
+    min.features = 15,
+    filter.genes = NULL,
+    force.filter = FALSE,
+    delimiter = "_"
+) {
+  check <- any(length(object@norm.data) > 0,
+               length(object@lda.results) > 0,
+               length(object@reducedDims) > 0,
+               length(object@tsne) > 0)
+  if (check & !force.filter) {
+    stop("Set force.filter = TRUE to initiate new spaceST object with supplied filtering settings. All data excep 'expr' will be lost.")
+  } else if (check & force.filter) {
+    object <- CreatespaceSTobject(as.matrix(object@expr), unique.genes, min.exp, min.features, filter.genes, delimiter)
+  } else {
+    expr <- object@expr
+    if (!is.null(filter.genes)){
+      removed.genes <- grep(rownames(expr), pattern = filter.genes, perl = TRUE)
+      if(length(removed.genes) > 0) {
+        expr = expr[-removed.genes, ]
+      }
+    }
+    # Filter out low quality genes
+    expr = expr[Matrix::rowSums(expr >= min.exp) >= min.features, ]
+
+    # Filter out low quality spots
+    indices <- which(apply(expr, 2, function(x) sum(x > 0)) < unique.genes)
+    if (length(indices) > 0){
+      expr <- expr[, -indices]
+    }
+
+    filter.settings = list(
+      unique.genes = unique.genes,
+      min.exp = min.exp,
+      min.features = min.features,
+      filter.genes = filter.genes)
+
+    object@expr <- expr
+    object@filter.settings <- filter.settings
+    return(object)
+  }
+})
+
+#' Method dim
+#' @name dim
+#' @rdname spaceST-methods
+#' @aliases dim,spaceST-methods
+setMethod("dim", "spaceST", function(x) dim(x@expr))
+
+#' Method counts.
+#' @name counts
+#' @exportMethod counts
+setGeneric("counts", function(object) standardGeneric("counts"))
+
+#' @name counts
+#' @rdname spaceST-methods
+#' @aliases counts,spaceST-methods
+setMethod("counts", "spaceST", function(object) as.matrix(object@expr))
+
+#' Method normcounts.
+#' @name normcounts
+#' @exportMethod normcounts
+setGeneric("normcounts", function(object) standardGeneric("normcounts"))
+
+#' @name normcounts
+#' @rdname spaceST-methods
+#' @aliases normcounts,spaceST-methods
+setMethod("normcounts", "spaceST", function(object) as.matrix(object@norm.data))
+
+#' Method topic.clusters.
+#' @name topic.clusters
+#' @exportMethod topic.clusters
+setGeneric("topic.clusters", function(object) standardGeneric("topic.clusters"))
+
+#' @name topic.clusters
+#' @rdname spaceST-methods
+#' @aliases topic.clusters,spaceST-methods
+setMethod("topic.clusters", "spaceST", function(object) as.matrix(object@meta.data$clusters))

@@ -119,7 +119,7 @@ merge_exp_list <- function(x,
   # Filter out low quality genes
   all.samples.matrix = all.samples.matrix[Matrix::rowSums(all.samples.matrix >= min.exp) >= min.features, ]
 
-  # Filter out low quality features
+  # Filter out low quality spots
   indices <- which(apply(all.samples.matrix, 2, function(x) sum(x > 0)) < unique.genes)
   if (length(indices) > 0){
     all.samples.matrix <- all.samples.matrix[, -indices]

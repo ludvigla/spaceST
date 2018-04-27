@@ -22,8 +22,3 @@ Integer vector specifying cluster identity of each feature.
 \description{
 This function is used to cluster features based on a topics matrix.
 }
-\seealso{
-Other topic functions: \code{\link{topic_compute}},
-  \code{\link{topic_heatmap}}
-}
-\concept{topic functions}

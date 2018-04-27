@@ -2,8 +2,7 @@
 % Please edit documentation in R/spaceST_methods.R
 \name{spPCA}
 \alias{spPCA}
-\alias{spaceST-pca}
-\title{PCA method.}
+\title{Method spPCA for spaceST class.}
 \usage{
 spPCA(object, ntop = 500, ncomponents = 2, exprs_values = "norm.data",
   ...)
