@@ -98,7 +98,7 @@ topic_compute.spaceST <- function(
   object@meta.data$minClusterSize <- minClusterSize
   return(object)
 }
-
+options(repr.plot.width=12, repr.plot.height=7)
 #' Calculate clusters based on topics.
 #'
 #' This function is used to cluster features based on a topics matrix.
@@ -182,7 +182,11 @@ topic_heatmap <- function(df, method.dist = "euclidean", method.tree = "ward.D2"
 #' @param clusters Integer vector specifying cluster identity of each feature.
 #' @return Integer vector specifying cluster identity of each feature.
 #' @export
-cluster_matrix.default <- function(object, clusters = NULL){
+cluster_matrix <- function(object, clusters) {
+  UseMethod("cluster_matrix")
+}
+#' @export
+cluster_matrix.default <- function(object, clusters){
   if (!(class(df) %in% c("data.frame", "matrix"))){
     stop("Wrong input format.")
   }
@@ -192,7 +196,7 @@ cluster_matrix.default <- function(object, clusters = NULL){
   return(clust.matrix)
 }
 #' @export
-cluster.matrix.spaceST <- function(object, clusters = NULL){
+cluster_matrix.spaceST <- function(object, clusters){
   stopifnot(class(df) == "spaceST")
   clust.matrix <- cluster_matrix.default(object@expr, ifelse(is.null(clusters), object@meta.data$clusters, clusters))
 }
