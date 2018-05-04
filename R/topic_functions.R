@@ -187,7 +187,7 @@ cluster_matrix <- function(object, clusters) {
 }
 #' @export
 cluster_matrix.default <- function(object, clusters){
-  if (!(class(df) %in% c("data.frame", "matrix"))){
+  if (!(class(object) %in% c("data.frame", "matrix"))){
     stop("Wrong input format.")
   }
   clust.matrix <- rowsum(t(object), clusters)
@@ -197,6 +197,6 @@ cluster_matrix.default <- function(object, clusters){
 }
 #' @export
 cluster_matrix.spaceST <- function(object, clusters){
-  stopifnot(class(df) == "spaceST")
+  stopifnot(class(object) == "spaceST")
   clust.matrix <- cluster_matrix.default(object@expr, ifelse(is.null(clusters), object@meta.data$clusters, clusters))
 }
