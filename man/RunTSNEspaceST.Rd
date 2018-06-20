@@ -7,7 +7,7 @@
 RunTSNEspaceST(object, dims = 2, initial.dims = 50, theta = 0,
   check_duplicates = FALSE, pca = TRUE, perplexity = 15,
   max_iter = 1000, verbose = FALSE, seed = 0, plot.tSNE = FALSE,
-  use.dims = "topics", clusters = NULL)
+  use.dims = "topics", select.dims = NULL, clusters = NULL)
 }
 \arguments{
 \item{object}{A spaceST object}

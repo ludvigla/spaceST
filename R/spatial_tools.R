@@ -13,7 +13,6 @@
 #' @param hide.legend Exclude legend.
 #' @param bg.black Set background color to black.
 #' @param xlim,ylim Set limits of x/y axes. [default: xlim = c(1, 34), ylim = c(1, 36)]
-#' @param labels Should plots be labeled?
 #' @param arrange Arrange plots
 #' @param ncols Number of columns in arranged plot table.
 #' @param ... Parameters passed to geom_point.
@@ -34,25 +33,56 @@ spatial.heatmap <- function(
   xlim = c(1, 33),
   ylim = c(1, 35),
   ncols = NULL,
-  labels = T,
   arrange = T,
+  col.title = NULL,
+  scale = "",
+  size = 3,
+  hide.dropouts = F,
   ...
 ) {
   stopifnot(class(object) == "spaceST")
-  if (type == "expr") {
-    val = object@expr[value, ]
-  } else if (type == "norm.data") {
-    val = object@norm.data[value, ]
-  } else if (type == "pca") {
-    val = object@reducedDims[, value]
-  } else if (type == "topics") {
-    val = object@lda.results$omega[, value]
+  if (length(value) == ncol(object@expr)) {
+    val = value
   } else {
-    stop("type ", type, " not valid. Select one of 'expr', 'norm.data' or 'pca'")
+    if (type == "expr") {
+      val = object@expr[value, ]
+      if (hide.dropouts) {
+        val[val == 0] <- NA
+        print(sum(is.na(val)))
+      }
+    } else if (type == "norm.data") {
+      val = object@norm.data[value, ]
+      if (hide.dropouts) {
+        val[val == 0] <- NA
+        print(sum(is.na(val)))
+      }
+    } else if (type == "pca") {
+      val = object@reducedDims$x[, value]
+    } else if (type == "topics") {
+      val = object@lda.results$omega[, value]
+    } else if (dim(value)[2] %in% c(2, 3)) {
+      d <- dim(value)[2]
+      if (scale == "colwise") {
+        val <- apply(value, 2, function(x) {
+         return((x - min(x))/(max(x) - min(x)))
+        })
+      } else {
+        val <- value
+        x <- as.vector(val)
+        val <- matrix((x - min(x))/(max(x) - min(x)), ncol = d)
+      }
+      if (d == 2) {
+        val <- cbind(val, 0)
+      }
+      val <- rgb(val, maxColorValue = 1)
+    } else {
+      stop("type ", type, " not valid. Select one of 'expr', 'norm.data' or 'pca'")
+    }
   }
-
   # Combine array coordinates with value
   gg.df <- data.frame(object@coordinates, val)
+  max.col <- max(val, na.rm = T)
+  min.col <- min(val, na.rm = T)
   pal <- palette.select(palette)
   reps <- unique(gg.df$replicate)
 
@@ -71,21 +101,35 @@ spatial.heatmap <- function(
 
   # Plot spatial heatmap
   p.list <- lapply(1:length(reps), function(i) {
-    subset.df <- subset(gg.df, replicate == reps[i])
+    subset.df <- na.omit(subset(gg.df, replicate == reps[i]))
     cols <- rgb(pal(seq(0, 1, length.out = 10)), maxColorValue = 255)
     if (invert.heatmap) {
       cols <- rev(cols)
     }
-    p <- ggplot(subset.df, aes(x, 36 - y, color = val)) +
+    if (class(val) == "character") {
+      p <- ggplot(subset.df, aes(x, 36 - y))
+    } else {
+      p <- ggplot(subset.df, aes(x, 36 - y, color = val))
+    }
+    p <- p +
       scale_x_continuous(limits = xlim, expand = c(0, 0)) +
       scale_y_continuous(limits = ylim, expand = c(0, 0))
     if (!is.null(HE.list)) {
       p <- p + annotation_custom(grobs.list[[i]], -Inf, Inf, -Inf, Inf)
     }
-    p <- p + geom_point(...) +
-      theme_void() +
-      labs(color = value) +
-      scale_color_gradientn(colours = cols)
+    if (nrow(subset.df) > 1007) {
+      print(nrow(gg.df))
+      size = 0.1
+    }
+    if (class(val) == "character") {
+      p <- p + geom_point(color = subset.df$val, size = size, ...) +
+        theme_void()
+    } else {
+      p <- p + geom_point(size = size, ...) +
+        theme_void() +
+        labs(color = ifelse(!is.null(col.title), col.title, value)) +
+        scale_color_gradientn(colours = cols, limits = c(min.col, max.col))
+    }
     if (hide.legend) {
       p <- p + guides(color = FALSE)
     }

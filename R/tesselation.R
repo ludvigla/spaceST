@@ -98,17 +98,20 @@ tessViz <- function(
   fill.empty = FALSE
 ) {
   stopifnot(class(object) == "spaceST",
-            datatype %in% c("topics", "reducedDims", "t-SNE"))
+            datatype %in% c("topics", "reducedDims", "t-SNE", "expr"))
   all.coords <- object@coordinates
   if (datatype == "topics") {
     stopifnot(length(object@lda.results$omega) > 0)
     all.z = object@lda.results$omega
   } else if (datatype == "reducedDims") {
     stopifnot(length(object@reducedDims) > 0)
-    all.z = object@reducedDims
+    all.z = object@reducedDims$x
   } else if (datatype == "t-SNE") {
     stopifnot(length(object@tsne) > 0)
     all.z <- object@tsne
+  } else if (datatype == "expr") {
+    stopifnot(length(object@expr) > 0)
+    all.z <- t(object@expr)
   }
 
   # Generate empty marix to fill empty spot positions
@@ -252,14 +255,14 @@ scale2range <- function(x, a, b){
 #' Create palettes
 #'
 #' @description returns a palette using the coloRamp function
-#' @param palette select palette [options: "GnBu", "the.cols", "Spectral", "offwhite.to.black"]
+#' @param palette select palette [options: "GnBu", "RdBu", "the.cols", "Spectral", "offwhite.to.black", "viridis", "cividis", "magma", "plasma", "heat"]
 #' @importFrom RColorBrewer brewer.pal
 #' @importFrom grDevices colorRamp
-#' @importFrom viridis inferno magma plasma
+#' @importFrom viridis viridis inferno magma plasma
 #' @export
 palette.select <- function(palette) {
   palettes <- list(
-    green.to.blue = colorRamp(brewer.pal(9,"GnBu")),
+    GnBu = colorRamp(brewer.pal(9,"GnBu")),
     the.cols = colorRamp(c(rgb(255,255,217, maxColorValue=255),
                            rgb(65,182,196, maxColorValue=255),
                            rgb(8, 29, 88, maxColorValue=255)),
@@ -271,7 +274,9 @@ palette.select <- function(palette) {
     viridis = colorRamp(viridis(9)),
     cividis = colorRamp(cividis(9)),
     magma = colorRamp(magma(9)),
-    plasma = colorRamp(plasma(9))
+    plasma = colorRamp(plasma(9)),
+    heat = colorRamp(c("dark blue", "cyan", "yellow", "red")),
+    RdBu = colorRamp(brewer.pal(9,"RdBu"))
   )
   return(palettes[[palette]])
 }

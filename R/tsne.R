@@ -23,6 +23,7 @@ RunTSNEspaceST <- function(
   seed = 0,
   plot.tSNE = FALSE,
   use.dims = "topics",
+  select.dims = NULL,
   clusters = NULL
 ) {
   if (use.dims == "topics") {
@@ -30,7 +31,22 @@ RunTSNEspaceST <- function(
     df <- object@lda.results$omega
   } else if (use.dims == "pca") {
     stopifnot(length(object@reducedDims) > 0)
-    df <- object@reducedDims
+    df <- object@reducedDims$x
+    if (is.null(select.dims)) {
+      df <- df[, select.dims]
+    }
+  } else if (use.dims == "expr") {
+    stopifnot(length(object@expr) > 0)
+    df <- as.matrix(object@expr)
+    if (is.null(select.dims)) {
+      vars <- sort(apply(df, 1, var), decreasing = T)
+      if (length(vars) > 500) {
+        vars <- vars[1:500]
+      }
+      df <- t(df[names(vars), ])
+    } else {
+      df <- t(df[select.dims, ])
+    }
   }
   # TODO: addmethods
   set.seed(seed)

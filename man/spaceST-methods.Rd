@@ -28,9 +28,9 @@
 \S4method{batch.correct}{spaceST}(object)
 
 \S4method{NormalizespaceST}{spaceST}(object, method = "cp10k", log2 = F,
-  pcount = 1, cluster = NULL, ...)
+  pcount = 1, clusters = NULL, ...)
 
-\S4method{plot.QC.spaceST}{spaceST}(object, separate = F)
+\S4method{plot.QC.spaceST}{spaceST}(object, separate = F, bins = 20, ...)
 
 \S4method{spPCA}{spaceST}(object, ntop = 500, ncomponents = 2,
   exprs_values = "norm.data", ...)

@@ -4,12 +4,16 @@
 \alias{plot.QC.spaceST}
 \title{Plot unique genes per feature and transcripts per feature.}
 \usage{
-plot.QC.spaceST(object, separate = F)
+plot.QC.spaceST(object, separate = F, bins = 20, ...)
 }
 \arguments{
 \item{object}{Object of class spaceST.}
 
 \item{separate}{Logical indicating whether replicates should be ploteed separately.}
+
+\item{bins}{Select number of bins.}
+
+\item{...}{Parameters passed to geom_histogram.}
 }
 \value{
 Histograms of unique genes per feature and transcripts per feature distributions.

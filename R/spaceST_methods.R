@@ -34,7 +34,8 @@ spaceST <- setClass(
     filter.settings = "list",
     meta.data = "list",
     version = "ANY",
-    status.expr = "character"
+    status.expr = "character",
+    DE.list = "ANY"
   )
 )
 
@@ -48,9 +49,10 @@ spaceST <- setClass(
 setMethod("show", signature = "spaceST", definition = function(object) {
   cat("An object of class ", class(object), "\n\n", sep = "")
   cat("Filter settings:\n")
-  cat("  Filtered features with less than ", object@filter.settings[[1]], " unique genes \n", sep = "")
-  cat("  Filtered genes with expression values =< ", object@filter.settings[[2]], " in =< ", object@filter.settings[[3]],
-      " features\n\n", sep = "")
+  cat("  Filtered out spots with less than ", object@filter.settings[[1]], " unique genes \n", sep = "")
+  cat("  Filtered out genes with expression values =< ", object@filter.settings[[2]], " in =< ", object@filter.settings[[3]],
+      " features\n", sep = "")
+  cat("  Filtered out genes matching ", object@filter.settings[[4]], " \n\n", sep = "")
   cat("expr status:", object@status.expr)
 })
 
@@ -116,7 +118,7 @@ setMethod(
                         method = "cp10k",
                         log2 = F,
                         pcount = 1,
-                        cluster = NULL, ...) {
+                        clusters = NULL, ...) {
     if (class(object) != "spaceST"){
       stop("Wrong input format.")
     }
@@ -125,10 +127,11 @@ setMethod(
       object@norm.data <- log2(calc_cpm(expr.data) + 1)
     } else {
       if (method == "scran") {
-        sce <- SingleCellExperiment(assays = list(counts = expr.data, logcounts = log2(expr.data + pcount)))
-        if (ncol(object@expr) > 500 | !is.null(cluster)) {
-          if (!is.null(cluster)) {
-            sce <- computeSumFactors(sce, cluster = cluster)
+        sce <- SingleCellExperiment::SingleCellExperiment(assays = list(counts = expr.data, logcounts = log2(expr.data + pcount)))
+        if (ncol(object@expr) > 500 | !is.null(clusters)) {
+          if (!is.null(clusters)) {
+            sce <- computeSumFactors(sce, cluster = clusters)
+            print("Using provided clusters ...")
           } else {
             q.clust <- quickCluster(as.matrix(expr.data))
             sce <- computeSumFactors(sce, cluster = q.clust)
@@ -142,7 +145,8 @@ setMethod(
         if (sum(sizeFactors(sce) == 0) > 0) {
           stop("Zero sum factors not allowed. Filter data before normalization with scran.")
         }
-        sce <- normalize(sce)
+        sce <- scater::normalize(sce)
+        print(class(sce))
         object@norm.data <- as(logcounts(sce), "dgCMatrix")
       } else if (method == "cp10k") {
         object@norm.data <- as(calc_cp10k(as.matrix(expr.data)), "dgCMatrix")
@@ -160,20 +164,22 @@ setMethod(
 #' if present.
 #' @param object Object of class spaceST.
 #' @param separate Logical indicating whether replicates should be ploteed separately.
+#' @param bins Select number of bins.
+#' @param ... Parameters passed to geom_histogram.
 #' @return Histograms of unique genes per feature and transcripts per feature distributions.
 #' @export
-setGeneric("plot.QC.spaceST", function(object, separate = F) standardGeneric("plot.QC.spaceST"))
+setGeneric("plot.QC.spaceST", function(object, separate = F, bins = 20, ...) standardGeneric("plot.QC.spaceST"))
 #' @name plot.QC.spaceST
 #' @aliases plot.QC.spaceST,spaceST-methods
 #' @rdname spaceST-methods
 #' @export
-setMethod("plot.QC.spaceST", "spaceST", function(object, separate = F) {
+setMethod("plot.QC.spaceST", "spaceST", function(object, separate = F, bins, ...) {
   if (class(object) != "spaceST") {
     stop("Wrong input format")
   }
   if (length(object@expr) > 0) {
     df <- ST_statistics(as.matrix(object@expr))
-    ST_statistics_plot(df, separate)
+    ST_statistics_plot(df, separate, bins = 20, ...)
   }
 })
 
@@ -210,10 +216,11 @@ setMethod(
   high.genes <- names(sort(apply(input.data, 1, var), decreasing = T)[1:ntop])
   input.data <- input.data[high.genes, ]
   pca <- prcomp(t(input.data), scale. = T, center = T, ...)
-  pcs <- pca$x
-  object@reducedDims <- pcs
+
+  object@reducedDims <- pca
   return(object)
 })
+
 
 
 #' Method spots.under.tissue for spaceST class.
@@ -243,19 +250,23 @@ setMethod(
   all.coords <- object@coordinates
   expr <- as.matrix(object@expr)
   selection.list <- lapply(1:length(reps), function(i) {
+    expr.subset <- expr[, all.coords$replicate == reps[i]]
     coords <- all.coords[all.coords$replicate == reps[i], 2:3]
-    spots <- paste(round(coords[, 1]), round(coords[, 2]))
+    spots <- paste(round(coords[, 1]), round(coords[, 2]), sep = "x")
     alignment <- read.table(selection.files[[i]], header = T)
     if (ncol(alignment) == 7) {
-      alignment <- subset(alignment, selected == 1)
+      alignment <- subset(alignment, selection == 1)
     }
-    alignment.spots <- paste(alignment$x, alignment$y)
+    alignment.spots <- paste(alignment$x, alignment$y, sep = "x")
     stopifnot(sum(alignment.spots %in% spots) == sum(spots %in% alignment.spots))
     intersecting.spots <- which(alignment.spots %in% spots)
+
     spot_indices <- which(spots %in% alignment.spots)
-    subset_expr <- expr[, spot_indices]
+    subset_expr <- expr.subset[, spot_indices]
     alignment <- alignment[intersecting.spots, ]
-    colnames(subset_expr) <- paste(i, round(alignment$new_x, digits = 2), round(alignment$new_y, digits = 2), sep = delimiter)
+    new.spots <- paste(reps[i], round(alignment$new_x, digits = 2), round(alignment$new_y, digits = 2), sep = delimiter)
+    names(new.spots) <- paste(reps[i], round(alignment$x, digits = 2), round(alignment$y, digits = 2), sep = delimiter)
+    colnames(subset_expr) <- new.spots[colnames(subset_expr)]
     return(subset_expr)
   })
   expr <- do.call(cbind, selection.list)
@@ -324,6 +335,7 @@ setMethod(
 
     object@expr <- expr
     object@filter.settings <- filter.settings
+    object@coordinates <- get_coordinates(expr)
     return(object)
   }
 })

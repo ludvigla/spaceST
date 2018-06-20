@@ -11,7 +11,9 @@ ST_statistics_plot(df, separate = F, bins = NULL, ...)
 
 \item{separate}{Should replicates be seperated?}
 
-\item{...}{parameters passed to geom_histogram}
+\item{bins}{Select number of bins.}
+
+\item{...}{Parameters passed to geom_histogram.}
 }
 \value{
 Plot of histograms.

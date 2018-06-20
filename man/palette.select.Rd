@@ -7,7 +7,7 @@
 palette.select(palette)
 }
 \arguments{
-\item{palette}{select palette [options: "GnBu", "the.cols", "Spectral", "offwhite.to.black"]}
+\item{palette}{select palette [options: "GnBu", "RdBu", "the.cols", "Spectral", "offwhite.to.black", "viridis", "cividis", "magma", "plasma", "heat"]}
 }
 \description{
 returns a palette using the coloRamp function

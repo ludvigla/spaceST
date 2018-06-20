@@ -7,7 +7,7 @@
 spatial.heatmap(object, value, type = "expr", HE.list = NULL,
   palette = "spectral", invert.heatmap = FALSE, hide.legend = FALSE,
   bg.black = FALSE, xlim = c(1, 33), ylim = c(1, 35), ncols = NULL,
-  labels = T, arrange = T, ...)
+  arrange = T, col.title = NULL, scale = "", size = 3, ...)
 }
 \arguments{
 \item{object}{Object of class spaceST.}
@@ -32,8 +32,6 @@ spatial heatmap.}
 \item{xlim, ylim}{Set limits of x/y axes. [default: xlim = c(1, 34), ylim = c(1, 36)]}
 
 \item{ncols}{Number of columns in arranged plot table.}
-
-\item{labels}{Should plots be labeled?}
 
 \item{arrange}{Arrange plots}
 

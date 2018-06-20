@@ -11,7 +11,7 @@
 #' @importFrom edgeR glmLRT glmFit topTags estimateDisp glmFit
 #' @return Topic matrix
 RunDEspaceST <- function(spST, clusters = "topic", verbose = TRUE, pvalue = 0.05) {
-  stopifnot(length(spST@normalized) > 0)
+  stopifnot(length(spST@norm.data) > 0)
   if (clusters == "topic") {
     stopifnot(!is.null(spST@meta.data$clusters))
     clusters <- spST@meta.data$clusters
@@ -38,16 +38,16 @@ RunDEspaceST <- function(spST, clusters = "topic", verbose = TRUE, pvalue = 0.05
   }
 
   # This step will take some time to compute. Grab a coffee!
-  fit.list <- parallel::mclapply(1:length(design.list), function(x) {
+  fit.list <- lapply(1:length(design.list), function(x) {
     design <- design.list[[x]]
-    sce = newSCESet(countData = spST@normalized)
+    sce = SingleCellExperiment(assay = list(counts = as.matrix(spST@expr), logcounts = as.matrix(spST@norm.data)))
     y = convertTo(sce, type = "edgeR")
     y = estimateDisp(y, design)
     return(y)
   })
 
   # Intitiate empty lists to save reuslts in
-  res.total.list <- parallel::mclapply(1:length(design.list), function(x) {
+  res.total.list <- lapply(1:length(design.list), function(x) {
     # Obtain design matrix
     design <- design.list[[x]]
     # Obtain fitted model

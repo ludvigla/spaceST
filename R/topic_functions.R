@@ -98,7 +98,8 @@ topic_compute.spaceST <- function(
   object@meta.data$minClusterSize <- minClusterSize
   return(object)
 }
-options(repr.plot.width=12, repr.plot.height=7)
+
+
 #' Calculate clusters based on topics.
 #'
 #' This function is used to cluster features based on a topics matrix.
@@ -199,4 +200,29 @@ cluster_matrix.default <- function(object, clusters){
 cluster_matrix.spaceST <- function(object, clusters){
   stopifnot(class(object) == "spaceST")
   clust.matrix <- cluster_matrix.default(object@expr, ifelse(is.null(clusters), object@meta.data$clusters, clusters))
+}
+
+
+#' Extract top features
+#'
+#' @param object Object of class spaceST.
+ExtractTopFeatures <- function(object,
+                               top_features = 1000,
+                               method = "poisson",
+                               options = "min",
+                               shared = FALSE) {
+  UseMethod("ExtractTopFeatures")
+}
+#' @export
+ExtractTopFeatures.spaceST <- function(object,
+                                       top_features = 1000,
+                                       method = "poisson",
+                                       options = "min",
+                                       shared = FALSE) {
+  top.features <- ExtractTopFeatures(object@lda.results$theta,
+                                     top_features = top_features,
+                                     method = method,
+                                     options = options,
+                                     shared = shared)
+  return(top.features)
 }

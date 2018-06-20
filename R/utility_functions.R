@@ -19,7 +19,8 @@ ST_statistics <- function(df, delimiter = "_"){
 #' @export
 #' @param df Input quality control data.frame.
 #' @param separate Should replicates be seperated?
-#' @param ... parameters passed to geom_histogram
+#' @param bins Select number of bins.
+#' @param ... Parameters passed to geom_histogram.
 #' @importFrom ggplot2 ggplot aes_string geom_histogram facet_grid
 #' @return Plot of histograms.
 ST_statistics_plot <- function(df, separate = F, bins = NULL, ...){
@@ -34,13 +35,13 @@ ST_statistics_plot <- function(df, separate = F, bins = NULL, ...){
       bw <- NULL
     }
     p <- ggplot(df, aes_string(type)) +
-      geom_histogram(color = "black", fill = ifelse(type == "unique.genes.per.feature", scales::muted("red"), scales::muted("blue")), binwidth = bw)
+      geom_histogram(color = "black", fill = ifelse(type == "unique.genes.per.feature", scales::muted("red"), scales::muted("blue")), binwidth = bw, ...)
     if (separate) {
       p <- p + facet_grid(~samples)
     }
     return(p)
   })
-  plot(cowplot::plot_grid(plotlist = p.list))
+  plot(cowplot::plot_grid(plotlist = p.list, nrow = 2))
 }
 
 #' Obtain coordinates from expression data list of expression data.frame
@@ -223,7 +224,7 @@ ensembl2hgnc.list <- function(df) {
 #' @rdname convert
 #' @export
 ensembl2hgnc.spaceST <- function(spST) {
-  spST@expr <- ensembl2hgnc.default(spST@expr)
+  spST@expr <- as(as.matrix(ensembl2hgnc.default(spST@expr)), "dgCMatrix")
   return(spST)
 }
 
