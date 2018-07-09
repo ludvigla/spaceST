@@ -99,12 +99,15 @@ setMethod(
 #' expression matrix.
 #' @seealso \link[scater]{Normalize} and \link[scran]{computeSumFactors}
 #' @importFrom scran quickCluster computeSumFactors
+#' @importFrom BiocGenerics sizeFactors
+#' @importFrom SingleCellExperiment logcounts
 #' @return Normalized expression data.
 #' @export
 setGeneric(name = "NormalizespaceST",
            def = function(object,
                           method = "scran",
                           log2 = F,
+                          pcount = 1,
                           clusters = NULL, ...
            ) standardGeneric("NormalizespaceST"))
 #' @name NormalizespaceST
@@ -128,7 +131,7 @@ setMethod(
     } else {
       if (method == "scran") {
         sce <- SingleCellExperiment::SingleCellExperiment(assays = list(counts = expr.data, logcounts = log2(expr.data + pcount)))
-        if (ncol(object@expr) > 500 | !is.null(clusters)) {
+        if (ncol(object@expr) > 700 | !is.null(clusters)) {
           if (!is.null(clusters)) {
             sce <- computeSumFactors(sce, cluster = clusters)
             print("Using provided clusters ...")
@@ -146,7 +149,6 @@ setMethod(
           stop("Zero sum factors not allowed. Filter data before normalization with scran.")
         }
         sce <- scater::normalize(sce)
-        print(class(sce))
         object@norm.data <- as(logcounts(sce), "dgCMatrix")
       } else if (method == "cp10k") {
         object@norm.data <- as(calc_cp10k(as.matrix(expr.data)), "dgCMatrix")
@@ -157,6 +159,46 @@ setMethod(
 )
 
 
+#' Method plotPCA.
+#'
+#' Plot principal components.
+#' @param object Object of class spaceST.
+#' @param components Integer or character vector of length 2 specifying two PC components to compare.
+#' @return PCA plot.
+#' @importFrom ggplot2 ggplot aes_string geom_point theme_classic scale_color_brewer labs
+#' @export
+setGeneric(name = "plotPCA",
+           def = function(object,
+                          components = c(1, 2),
+                          ...
+           ) standardGeneric("plotPCA"))
+#' @rdname spaceST-methods
+#' @export
+setMethod(
+  f = "plotPCA",
+  signature = "spaceST",
+  definition = function(object,
+                        components = c(1, 2),
+                        ...
+                        ) {
+
+  if (length(object@reducedDims) == 0) {
+    message("reducedDims not present in spaceST object. Running PC analysis using normalized data ...")
+    stopifnot(length(object@norm.data) == 0)
+    object <- spPCA(object)
+  }
+  pcs <- as.data.frame(object@reducedDims$x)
+  pov <- summary(object@reducedDims)$importance
+  pcs$replicate <- object@coordinates$replicate
+  if (class(components) %in% c("integer", "numeric")) {
+    components <- colnames(pcs)[components]
+  }
+  ggplot(pcs, aes_string(components[1], components[2], color = "replicate")) +
+    geom_point() +
+    theme_classic() +
+    scale_color_brewer(palette = "Dark2") +
+    labs(x = paste(components[1], round(pov[2, components[1]]*100, digits = 2), "%"), y = paste(components[2], round(pov[2, components[2]]*100, digits = 2), "%"))
+})
 #' Plot unique genes per feature and transcripts per feature.
 #'
 #' This function is used to plot the unique genes per feature and transcipts per feature
@@ -168,17 +210,18 @@ setMethod(
 #' @param ... Parameters passed to geom_histogram.
 #' @return Histograms of unique genes per feature and transcripts per feature distributions.
 #' @export
-setGeneric("plot.QC.spaceST", function(object, separate = F, bins = 20, ...) standardGeneric("plot.QC.spaceST"))
-#' @name plot.QC.spaceST
+setGeneric("plot_QC_spaceST", function(object, separate = F, bins = 20, ...) standardGeneric("plot_QC_spaceST"))
+#' @name plot_QC_spaceST
 #' @aliases plot.QC.spaceST,spaceST-methods
 #' @rdname spaceST-methods
 #' @export
-setMethod("plot.QC.spaceST", "spaceST", function(object, separate = F, bins, ...) {
+setMethod(f = "plot_QC_spaceST", signature = "spaceST", definition = function(object, separate = F, bins, ...) {
   if (class(object) != "spaceST") {
     stop("Wrong input format")
   }
   if (length(object@expr) > 0) {
-    df <- ST_statistics(as.matrix(object@expr))
+    samples <- object@coordinates$replicate
+    df <- cbind(ST_statistics(as.matrix(object@expr)), samples = samples)
     ST_statistics_plot(df, separate, bins = 20, ...)
   }
 })
@@ -189,12 +232,11 @@ setMethod("plot.QC.spaceST", "spaceST", function(object, separate = F, bins, ...
 #' Run PC analysis on spaceST object.
 #' @param object Object of class spaceST.
 #' @param ntop Number of variable genes to select for PC analysis.
-#' @param ncomponents Number of components that should be returned.
 #' @param exprs_values Select target object to use as input for PC analysis [options: "norm.data", "expr"]
 #' @param ... Parameters passed to \link[stats]{prcomp}.
 #' @seealso \link[stats]{prcomp}
 #' @export
-setGeneric("spPCA", function(object, ntop = 500, ncomponents = 2, exprs_values = "norm.data", ...) standardGeneric("spPCA"))
+setGeneric("spPCA", function(object, ntop = 500, exprs_values = "norm.data", ...) standardGeneric("spPCA"))
 #' @export
 #' @name spPCA
 #' @aliases spPCA,spaceST-methods
@@ -230,9 +272,11 @@ setMethod(
 #' @param selection.files List of paths to selection files. The order of selections has to match the order of
 #' sample matrices used to initiate the spaceST object.
 #' @param delimiter Delimiter for expr headers.
+#' @param keep.filter Set to FALSE if you don't want to apply the same filtering settings that were used when the
+#' spaceST object was initiated.
 #' @seealso \link[CreatespaceSTobject]{spaceST}
 #' @export
-setGeneric("spots.under.tissue", function(object, selection.files, delimiter = "_") standardGeneric("spots.under.tissue"))
+setGeneric("spots.under.tissue", function(object, selection.files, delimiter = "_", keep.filter = T) standardGeneric("spots.under.tissue"))
 #' @rdname spaceST-methods
 #' @name spots.under.tissue
 #' @aliases spots.under.tissue,spaceST-methods
@@ -243,7 +287,8 @@ setMethod(
   definition = function(
     object,
     selection.files,
-    delimiter = "_"
+    delimiter = "_",
+    keep.filter = T
 ) {
   stopifnot(class(object) == "spaceST")
   reps <- unique(object@coordinates$replicate)
@@ -255,7 +300,7 @@ setMethod(
     spots <- paste(round(coords[, 1]), round(coords[, 2]), sep = "x")
     alignment <- read.table(selection.files[[i]], header = T)
     if (ncol(alignment) == 7) {
-      alignment <- subset(alignment, selection == 1)
+      alignment <- alignment[alignment[, 7] == 1, ]
     }
     alignment.spots <- paste(alignment$x, alignment$y, sep = "x")
     stopifnot(sum(alignment.spots %in% spots) == sum(spots %in% alignment.spots))
@@ -270,7 +315,16 @@ setMethod(
     return(subset_expr)
   })
   expr <- do.call(cbind, selection.list)
-  new.spST <- CreatespaceSTobject(expr, delimiter = delimiter)
+  if (keep.filter) {
+    new.spST <- CreatespaceSTobject(expr, delimiter = delimiter,
+                                    unique.genes = object@filter.settings$unique.genes,
+                                    min.features = object@filter.settings$min.features,
+                                    min.exp = object@filter.settings$min.exp,
+                                    filter.genes = object@filter.settings$filter.genes
+                                    )
+  } else {
+    new.spST <- CreatespaceSTobject(expr, delimiter = delimiter)
+  }
   return(new.spST)
 })
 
@@ -374,4 +428,14 @@ setGeneric("topic.clusters", function(object) standardGeneric("topic.clusters"))
 #' @name topic.clusters
 #' @rdname spaceST-methods
 #' @aliases topic.clusters,spaceST-methods
-setMethod("topic.clusters", "spaceST", function(object) as.matrix(object@meta.data$clusters))
+setMethod("topic.clusters", "spaceST", function(object) object@meta.data$clusters)
+
+#' Method topic.clusters.
+#' @name getLDA
+#' @exportMethod getLDA
+setGeneric("getLDA", function(object) standardGeneric("getLDA"))
+
+#' @name getLDA
+#' @rdname spaceST-methods
+#' @aliases getLDA,spaceST-methods
+setMethod("getLDA", "spaceST", function(object) object@lda.results)

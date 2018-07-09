@@ -37,7 +37,8 @@ CreatespaceSTobject <- function(
   object@expr <- as(merge_exp_list(
     raw.data, unique.genes,
     min.exp, min.features,
-    filter.genes = filter.genes
+    filter.genes = filter.genes,
+    delimiter = delimiter
   ), "dgCMatrix")
   object@coordinates <- get_coordinates(object@expr, delimiter)
   object@status.expr <- "filtered raw data"

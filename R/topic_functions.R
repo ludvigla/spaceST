@@ -94,7 +94,7 @@ topic_compute.spaceST <- function(
     log.scale = F
   )
   object@lda.results <- lda.results
-  object@meta.data$clusters <- topic_clusters(omega = lda.results$omega, minClusterSize = minClusterSize)
+  object@meta.data$clusters <- clusterST(omega = lda.results$omega, minClusterSize = minClusterSize)
   object@meta.data$minClusterSize <- minClusterSize
   return(object)
 }
@@ -103,56 +103,50 @@ topic_compute.spaceST <- function(
 #' Calculate clusters based on topics.
 #'
 #' This function is used to cluster features based on a topics matrix.
-#' @param omega Topic data.frame.
+#' @param object Object of class spaceST.
 #' @param method.dist Set distance method.
 #' @param method.tree Set clustering method.
 #' @param minClusterSize Integer value specifying the minimum cluster size allowed.
 #' @return Integer vector specifying cluster identity of each feature.
 #' @export
-topic_clusters <- function(omega, method.dist = "euclidean", method.tree = "ward.D2", minClusterSize = 30){
+clusterST <- function(
+  object,
+  method.dist = "euclidean",
+  method.tree = "ward.D2",
+  minClusterSize = 30
+  ){
+  omega <- object@lda.results$omega
   my.dist = dist(omega, method = method.dist)
   my.tree = hclust(my.dist, method = method.tree)
   clusters = unname(dynamicTreeCut::cutreeDynamic(my.tree, distM = as.matrix(my.dist), verbose = 0, minClusterSize = minClusterSize))
-  return(clusters)
+  object@meta.data$clusters <- clusters
+  return(object)
 }
 
 
 #' Plot heatmap of lda results.
 #'
 #' This function is used to plot a heatmap of lda results.
-#' @param df Topic data.frame (omega) or "topics" class object.
+#' @param object Object of class spaceST.
 #' @param method.dist Set distance method.
 #' @param method.tree Set clustering method.
 #' @param minClusterSize Minimum cluster size.
-#' @importFrom gplots heatmap.2
+#' @param cols Set cluster colors.
 #' @return Heatmap of topic results.
 #' @export
-topic_heatmap <- function(df, method.dist = "euclidean", method.tree = "ward.D2", minClusterSize = 30){
-  stopifnot(class(df) == "data.frame" | class(df) == "matrix" | class(df) == "topics")
-  if (class(df) == "topics"){
-    df <- df$omega
-  }
-
+topic_heatmap <- function(object, method.dist = "euclidean", method.tree = "ward.D2", minClusterSize = 30, cols = NULL){
+  stopifnot(class(object) == "spaceST")
+  df <- object@lda.results$omega
   mycol = colorRampPalette(c("dark blue", "cyan", "yellow", "red"))(256)
-  clusters = topic_clusters(df, method.dist = method.dist, method.tree = method.tree, minClusterSize = minClusterSize)
-  #colors = c("#114477", "#4477AA", "#77AADD", "#117755", "#44AA88", "#99CCBB", "#777711", "#AAAA44", "#DDDD77", "#771111", "#AA4444", "#DD7777", "#771144", "#AA4477", "#DD77AA")
-  colors = c("royalblue3",
-             "mediumpurple4",
-             "navajowhite2",
-             "chocolate",
-             "firebrick",
-             "yellow2",
-             "aquamarine",
-             "orange1",
-             "olivedrab2",
-             "darkgreen",
-             "pink",
-             "black",
-             "navy",
-             "khaki3",
-             "lightsteelblue1")
-  clusters.col = colors[clusters]
-  heatmap.2(
+  clusters = clusterST(object, method.dist, method.tree, minClusterSize)@meta.data$clusters
+  if (!is.null(cols)) {
+    clusters.col <- cols
+  } else {
+    clusters.col <- brewer.pal(n = 9, name = "Set1")
+  }
+  clusters.col = clusters.col[clusters]
+
+  gplots::heatmap.2(
     t(df),
     key = TRUE,
     key.xlab = 'Identity',
@@ -181,6 +175,7 @@ topic_heatmap <- function(df, method.dist = "euclidean", method.tree = "ward.D2"
 #' This function is used to pool clustered features by adding the gene expression values within each cluster.
 #' @param object Expression data.frame, matrix or object of class spaceST.
 #' @param clusters Integer vector specifying cluster identity of each feature.
+#' @param CountClust ExtractTopFeatures
 #' @return Integer vector specifying cluster identity of each feature.
 #' @export
 cluster_matrix <- function(object, clusters) {
@@ -206,23 +201,23 @@ cluster_matrix.spaceST <- function(object, clusters){
 #' Extract top features
 #'
 #' @param object Object of class spaceST.
-ExtractTopFeatures <- function(object,
-                               top_features = 1000,
-                               method = "poisson",
-                               options = "min",
-                               shared = FALSE) {
-  UseMethod("ExtractTopFeatures")
-}
+#' @seealso \link[CountClust]{ExtractTopFeatures}
 #' @export
-ExtractTopFeatures.spaceST <- function(object,
+ExtractTopFeaturesST <- function(object,
                                        top_features = 1000,
                                        method = "poisson",
                                        options = "min",
                                        shared = FALSE) {
-  top.features <- ExtractTopFeatures(object@lda.results$theta,
+  theta <- object@lda.results$theta
+  top.features <- CountClust::ExtractTopFeatures(theta,
                                      top_features = top_features,
                                      method = method,
                                      options = options,
                                      shared = shared)
-  return(top.features)
+  genes <- rownames(theta)
+  res <- apply(top.features$indices, 1, function(x) {
+    genes[x]
+  })
+  colnames(res) <- paste("Topic", 1:ncol(res), sep = "")
+  return(res)
 }

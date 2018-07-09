@@ -4,17 +4,19 @@
 \alias{topic_heatmap}
 \title{Plot heatmap of lda results.}
 \usage{
-topic_heatmap(df, method.dist = "euclidean", method.tree = "ward.D2",
-  minClusterSize = 30)
+topic_heatmap(object, method.dist = "euclidean", method.tree = "ward.D2",
+  minClusterSize = 30, cols = NULL)
 }
 \arguments{
-\item{df}{Topic data.frame (omega) or "topics" class object.}
+\item{object}{Object of class spaceST.}
 
 \item{method.dist}{Set distance method.}
 
 \item{method.tree}{Set clustering method.}
 
 \item{minClusterSize}{Minimum cluster size.}
+
+\item{cols}{Set cluster colors.}
 }
 \value{
 Heatmap of topic results.

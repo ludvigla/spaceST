@@ -11,7 +11,7 @@ ensembl2hgnc(df, organism = "human")
 
 \method{ensembl2hgnc}{default}(df, organism = "human")
 
-\method{ensembl2hgnc}{list}(df)
+\method{ensembl2hgnc}{list}(df, organism = "human")
 
 \method{ensembl2hgnc}{spaceST}(spST)
 }
@@ -25,4 +25,5 @@ Data.frame or matrix with converted names.
 }
 \description{
 Function used to convert ENSEMBL gene ids of an expression matrix into HGNC/MGI symbols.
+Duplicated gene names will be aggregated.
 }

@@ -5,7 +5,7 @@
 \title{Merge and filter expression datasets}
 \usage{
 merge_exp_list(x, unique.genes = 0, min.exp = 0, min.features = 0,
-  filter.genes = NULL)
+  filter.genes = NULL, delimiter = "_")
 }
 \arguments{
 \item{x}{List of exrpression data frames, data.frame or matrix.}
@@ -17,6 +17,8 @@ merge_exp_list(x, unique.genes = 0, min.exp = 0, min.features = 0,
 \item{min.features}{Integer value specifying number of features allowed with min.exp count.}
 
 \item{filter.genes}{Character vector specifying genes that should be filtered out.}
+
+\item{delimiter}{Delimiter used in header.}
 }
 \value{
 Merged and filtered dataframe.

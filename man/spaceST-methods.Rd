@@ -7,7 +7,8 @@
 \alias{batch.correct,spaceST-methods}
 \alias{NormalizespaceST}
 \alias{NormalizespaceST,spaceST-methods}
-\alias{plot.QC.spaceST}
+\alias{plotPCA,spaceST-method}
+\alias{plot_QC_spaceST}
 \alias{plot.QC.spaceST,spaceST-methods}
 \alias{spPCA}
 \alias{spPCA,spaceST-methods}
@@ -23,6 +24,8 @@
 \alias{normcounts,spaceST-methods}
 \alias{topic.clusters}
 \alias{topic.clusters,spaceST-methods}
+\alias{getLDA}
+\alias{getLDA,spaceST-methods}
 \title{space-ST methods.}
 \usage{
 \S4method{batch.correct}{spaceST}(object)
@@ -30,13 +33,15 @@
 \S4method{NormalizespaceST}{spaceST}(object, method = "cp10k", log2 = F,
   pcount = 1, clusters = NULL, ...)
 
-\S4method{plot.QC.spaceST}{spaceST}(object, separate = F, bins = 20, ...)
+\S4method{plotPCA}{spaceST}(object, components = c(1, 2), ...)
 
-\S4method{spPCA}{spaceST}(object, ntop = 500, ncomponents = 2,
-  exprs_values = "norm.data", ...)
+\S4method{plot_QC_spaceST}{spaceST}(object, separate = F, bins = 20, ...)
+
+\S4method{spPCA}{spaceST}(object, ntop = 500, exprs_values = "norm.data",
+  ...)
 
 \S4method{spots.under.tissue}{spaceST}(object, selection.files,
-  delimiter = "_")
+  delimiter = "_", keep.filter = T)
 
 \S4method{filter}{spaceST}(object, unique.genes = 300, min.exp = 2,
   min.features = 15, filter.genes = NULL, force.filter = FALSE,
@@ -49,6 +54,8 @@
 \S4method{normcounts}{spaceST}(object)
 
 \S4method{topic.clusters}{spaceST}(object)
+
+\S4method{getLDA}{spaceST}(object)
 }
 \arguments{
 \item{object}{Object of class spaceST.}

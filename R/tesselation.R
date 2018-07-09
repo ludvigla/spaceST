@@ -248,7 +248,7 @@ tessViz <- function(
 
 # Scale values
 scale2range <- function(x, a, b){
-  res <- (b-a)*(x - min(x))/(max(x) - min(x)) + a
+  res <- (b-a)*(x - min(x, na.rm = T))/(max(x, na.rm = T) - min(x, na.rm = T)) + a
   return(res)
 }
 
@@ -258,7 +258,7 @@ scale2range <- function(x, a, b){
 #' @param palette select palette [options: "GnBu", "RdBu", "the.cols", "Spectral", "offwhite.to.black", "viridis", "cividis", "magma", "plasma", "heat"]
 #' @importFrom RColorBrewer brewer.pal
 #' @importFrom grDevices colorRamp
-#' @importFrom viridis viridis inferno magma plasma
+#' @importFrom viridis viridis inferno magma plasma cividis
 #' @export
 palette.select <- function(palette) {
   palettes <- list(
@@ -280,3 +280,155 @@ palette.select <- function(palette) {
   )
   return(palettes[[palette]])
 }
+
+
+#' Smooth visualization of gene expression patterns
+#'
+#' @param object Object of class spaceST.
+#' @param value Target vector to visualize. This value can be chosen from any slot of the spaceST object
+#' containing data linked to array spots.
+#' @param type Select dataset where the value can be found [options: "expr", "norm.data", "pca"]
+#' @param HE.list List of paths to HE images in jpeg format that should be used as a background for the
+#' spatial heatmap.
+#' @param overlay.spots Set to TRUE if you want to overlay array spots on the smoothed heatmap.
+#' @param set.max.alpha Sets maximum alpha value.
+#' @param ... Parameters passed to geom_point() in the array spot layer.
+#' @importFrom grid rasterGrob unit
+#' @importFrom akima interp
+#' @importFrom fields interp.surface.grid
+#' @importFrom ggplot2 geom_raster aes scale_x_continuous scale_y_continuous labs scale_fill_gradientn theme_void annotation_custom guides
+#' @export
+smooth.viz <- function(object, value, type = "norm.data", HE.list = NULL, overlay.spots = FALSE, set.max.alpha = 0.7, ...) {
+  # Use the 1000L array
+  xg = 33
+  yg = 35
+
+  reps <- unique(object@coordinates$replicate)
+
+  # Select proper samples
+  if (type == "norm.data") {
+    expr <- object@norm.data
+  } else if (type == "expr") {
+    expr <- object@expr
+  } else if (type == "pca") {
+    expr <- t(object@reducedDims$x)
+  } else if (type == "topics") {
+    expr <- t(object@lda.results$omega)
+  }
+
+  if (!value %in% rownames(expr)) {
+    stop(paste("value not present in", type, "slot"))
+  }
+
+  exp.non.zero.list <- lapply(1:length(reps), function(i) {
+    rep <- reps[i]
+    exp.values.non.zero = as.matrix(expr[, object@coordinates$replicate == rep])
+    exp.values.non.zero = exp.values.non.zero[rowSums(exp.values.non.zero) != 0,]
+    colnames(exp.values.non.zero) <- paste(round(object@coordinates$x[object@coordinates$replicate == rep]), round(object@coordinates$y[object@coordinates$replicate == rep]), sep = "x")
+    return(exp.values.non.zero)
+  })
+
+  flag = c("2x2", "2x3", "2x4", "2x5",
+           "3x2", "3x3", "3x4", "3x5",
+           "4x2", "4x3", "4x4", "4x5",
+           "5x2", "5x3", "5x4", "5x5")
+
+  bc <- c()
+  for (n in 2:32) {
+    for (j in 2:34) {
+      bc <- c(bc, paste(n, j, sep = "x"))
+    }
+  }
+  bc <- bc[!bc %in% flag]
+
+  # Barcodes not part of the dataset
+  exp.zero.list <- lapply(1:length(reps), function(i) {
+    rep <- reps[i]
+    exp.values.non.zero <- exp.non.zero.list[[i]]
+    exp.values_zero = matrix(nrow = 1, ncol = (length(bc) + length(flag)))
+    colnames(exp.values_zero) = c(bc,flag)
+    exp.values_zero[, colnames(exp.values_zero)] = 0
+    exp.values_zero = exp.values_zero[,which(!colnames(exp.values_zero) %in% colnames(exp.values.non.zero))]
+    exp.values_zero = t(as.matrix(exp.values_zero))
+    row.names(exp.values_zero) = value
+    return(exp.values_zero)
+  })
+
+  pal <- palette.select("spectral")
+  cols <- rev(rgb(pal(seq(0, 1, length.out = 10)), maxColorValue = 255))
+
+  if (!is.null(HE.list)) {
+    grobs.list <- lapply(HE.list, function(im) {
+      HE_img <- jpeg::readJPEG(im)
+      g <- rasterGrob(HE_img, width = unit(1, "npc"), height = unit(1, "npc"), interpolate = TRUE)
+    })
+  } else {
+    grobs.list <- NULL
+  }
+
+  # Overlay spots
+  if (overlay.spots) {
+    spots.list <- lapply(1:length(reps), function(i) {
+      rep <- reps[i]
+      exp.values = as.matrix(expr[value, object@coordinates$replicate == rep])
+      exp.values <- data.frame(val = exp.values, object@coordinates[, 2:3][object@coordinates$replicate == rep, ])
+    })
+  }
+
+  # Subset only based on one value's expression
+  p.list <- lapply(1:length(reps), function(i) {
+    exp.values.non.zero <- exp.non.zero.list[[i]]
+    exp.values_zero <- exp.zero.list[[i]]
+
+    genes.barcodes = as.matrix(exp.values.non.zero[rownames(exp.values.non.zero) == value, ])
+    genes.barcodes = cbind(t(genes.barcodes), exp.values_zero)
+
+    # Take all x and y values
+    x_tmp = sapply(strsplit(colnames(genes.barcodes), split = "x"), "[[",1)
+    y_tmp = sapply(strsplit(colnames(genes.barcodes), split = "x"), "[[",2)
+
+    # Prepare data for interpolation
+    genes.barcodes = cbind(x_tmp, y_tmp, as.numeric(genes.barcodes))
+
+    x1 = as.numeric(genes.barcodes[,1])
+    x1 = x1[!is.na(x1)]
+    y1 = as.numeric(genes.barcodes[,2])
+    y1 = y1[!is.na(y1)]
+    z = as.numeric(genes.barcodes[,3])
+
+    # Run interpolation
+    s =  interp(x1,y1, z, nx = xg, ny = yg)
+    #image2D(z = s$z, colkey = T, resfac = 10, smooth = TRUE, alpha = 1, box = FALSE, inttype = 1,  NAcol = "black", x = c(1:x), y = c(y:1), xlab="", ylab="", yaxt='n', xaxt = "n")
+    z <- s$z
+    x <- 1:nrow(z)
+    y <- 1:ncol(z)
+    gg <- list(x = x, y = y, z = z)
+    r <- interp.surface.grid(gg, grid.list = list(x = seq(0, ncol(z), length.out = ncol(z)*20), y = seq(0, nrow(z), length.out = nrow(z)*20)))
+    x <- rep(r$x, each = ncol(r$z))
+    y <- rep(r$y, nrow(r$z))
+    z <- as.vector(t(r$z))
+    gg <- data.frame(x, y, val = z)
+    gg$val[gg$val == 0] <- NA
+    gg$a <- scale2range(gg$val, 0, set.max.alpha)
+
+    p <- ggplot(na.omit(gg), aes(x, 36 - y, fill = val, alpha = a))
+    if (!is.null(grobs.list)) {
+      p <- p + annotation_custom(grobs.list[[i]], -Inf, Inf, -Inf, Inf)
+    }
+    p <- p +
+      geom_raster(interpolate = TRUE) +
+      scale_fill_gradientn(colours = cols) +
+      scale_x_continuous(limits = c(0, 34), expand = c(0, 0)) +
+      scale_y_continuous(limits = c(-1, 37), expand = c(0, 0)) +
+      theme_void() +
+      labs(fill = value) +
+      guides(alpha = FALSE)
+    if (overlay.spots) {
+      p <- p + geom_point(data = spots.list[[i]], aes(x, 36 - scale2range(y, min(y) - 1, max(y) + 1), color = val), ...) +
+        scale_color_gradientn(colours = cols) +
+        guides(color = FALSE)
+    }
+  })
+  cowplot::plot_grid(plotlist = p.list)
+}
+

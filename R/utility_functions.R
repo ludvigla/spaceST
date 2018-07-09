@@ -4,13 +4,11 @@
 #' data.frame with unique genes and transcript counts for each observation, as well as the sample id
 #' @export
 #' @param df Input gene expression data.frame
-#' @param delimiter Character separating spot coordinates in headers
 #' @return Data.frame with unique genes per feature and transcripts per feature
-ST_statistics <- function(df, delimiter = "_"){
-  samples <- do.call(rbind, strsplit(colnames(df), split = delimiter))[, 1]
+ST_statistics <- function(df){
   unique.genes.per.feature <- apply(df, 2, function(x) sum(x > 0))
   transcripts.per.feature <- colSums(df)
-  return(data.frame(unique.genes.per.feature, transcripts.per.feature, samples))
+  return(data.frame(unique.genes.per.feature, transcripts.per.feature))
 }
 
 #' Quality Control plot
@@ -92,19 +90,38 @@ get_coordinates.dgCMatrix <- function(x, delimiter = "_"){
 #' @param min.exp Integer value specifying lowest expression value allowed in min.features number of features.
 #' @param min.features Integer value specifying number of features allowed with min.exp count.
 #' @param filter.genes Character vector specifying genes that should be filtered out.
+#' @param delimiter Delimiter used in header.
 #' @return Merged and filtered dataframe.
 merge_exp_list <- function(x,
                   unique.genes = 0,
                   min.exp = 0,
                   min.features = 0,
-                  filter.genes = NULL){
+                  filter.genes = NULL,
+                  delimiter = "_"){
   if (class(x) == "list") {
+    stopifnot(length(x) > 1)
     df.A <- as.matrix(x[[1]])
+
+    # Check headers
+    coords <- do.call(rbind, strsplit(colnames(df.A), split = delimiter))
+    if (dim(coords)[2] == 2) {
+      xy <- paste(1, colnames(df.A), sep = delimiter)
+    } else if (dim(coords)[2] == 3) {
+      xy <- colnames(df.A)
+    }
+
     for (i in 2:length(x)){
       df.B <- as.matrix(x[[i]])
+      coords <- do.call(rbind, strsplit(colnames(df.B), split = delimiter))
+      if (dim(coords)[2] == 2) {
+        xy <- c(xy, paste(i, colnames(df.B), sep = delimiter))
+      } else if (dim(coords)[2] == 3) {
+        xy <- c(xy, colnames(df.B))
+      }
       df.A <- data.frame(merge(df.A, df.B, by = "row.names", all = TRUE), row.names = 1)
     }
     df.A[is.na(df.A)] <- 0
+    colnames(df.A) <- xy
     all.samples.matrix <- as(as.matrix(df.A), "dgCMatrix")
   } else {
     all.samples.matrix <- as(as.matrix(x), "dgCMatrix")
@@ -157,6 +174,7 @@ collect_gene_data <- function(gene.list, organism = "hsapiens", filters = "ensem
 #' Convert from ENSEMBL ID to HGNC symbol or MGI symbol
 #'
 #' @description Function used to convert ENSEMBL gene ids of an expression matrix into HGNC/MGI symbols.
+#' Duplicated gene names will be aggregated.
 #' @export
 #' @rdname convert
 #' @param df Data.frame or matrix with ENSEMBL ids as rownames.
@@ -213,10 +231,10 @@ ensembl2hgnc.default <- function(df, organism = "human") {
 
 #' @rdname convert
 #' @export
-ensembl2hgnc.list <- function(df) {
+ensembl2hgnc.list <- function(df, organism = "human") {
   exp.list <- list()
   for (i in 1:length(df)) {
-    exp.list[[i]] <- ensembl2hgnc.default(df[[i]])
+    exp.list[[i]] <- ensembl2hgnc.default(df[[i]], organism = organism)
   }
   return(exp.list)
 }

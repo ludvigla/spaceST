@@ -4,7 +4,8 @@
 \alias{NormalizespaceST}
 \title{Method NormalizespaceST ST data.}
 \usage{
-NormalizespaceST(object, method = "scran", log2 = F, clusters = NULL, ...)
+NormalizespaceST(object, method = "scran", log2 = F, pcount = 1,
+  clusters = NULL, ...)
 }
 \arguments{
 \item{object}{Object of class spaceST.}

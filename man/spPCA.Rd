@@ -4,15 +4,12 @@
 \alias{spPCA}
 \title{Method spPCA for spaceST class.}
 \usage{
-spPCA(object, ntop = 500, ncomponents = 2, exprs_values = "norm.data",
-  ...)
+spPCA(object, ntop = 500, exprs_values = "norm.data", ...)
 }
 \arguments{
 \item{object}{Object of class spaceST.}
 
 \item{ntop}{Number of variable genes to select for PC analysis.}
-
-\item{ncomponents}{Number of components that should be returned.}
 
 \item{exprs_values}{Select target object to use as input for PC analysis [options: "norm.data", "expr"]}
 

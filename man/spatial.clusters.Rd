@@ -2,28 +2,33 @@
 % Please edit documentation in R/spatial_tools.R
 \name{spatial.clusters}
 \alias{spatial.clusters}
-\title{Visualize spatial distribution of clusters}
+\title{Visualize spatial distribution of clusters.}
 \usage{
-spatial.clusters(clusters, coords, HE, size = 4, type = "ST_grid", ...)
+spatial.clusters(object, clusters = NULL, HE.list = NULL, arrange = T,
+  ncols = NULL, xlim = c(1, 33), ylim = c(1, 35), cols = NULL, ...)
 }
 \arguments{
-\item{clusters}{Integer vector specifying feature cluster identity for corresponding feature coordinates.}
+\item{object}{Object of class spaceST.}
 
-\item{coords}{data.frame with x, y values for feature coordinates.}
+\item{HE.list}{List of paths to HE images in jpeg format that should be used as a background for the
+spatial heatmap.}
 
-\item{HE}{Path to cropped black and white HE image.}
+\item{arrange}{Arrange plots.}
 
-\item{size}{numerical specifying coordinate size.}
+\item{ncols}{Number of columns in arranged plot table.}
+
+\item{xlim, ylim}{Set limits of x/y axes. [default: xlim = c(1, 34), ylim = c(1, 36)]}
+
+\item{cols}{Set custom cluster colors by specifying a character vector with color codes. You can specify
+specific colors for each cluster by naming the character vector with the cluster ids.}
 
 \item{...}{additional parameters passed to geom_point(), defining the attributes of the feature coordinate points.}
+
+\item{Clusters}{Integer/numeric vector specifying clusters.}
 }
 \value{
 Plot of clustered featured overlayed on black and white HE image.
 }
 \description{
-Given a black and white HE image, aligned feature coordinates and a cluster vector, this function
-can be used to visualize the spatial distribution of clusters.
-
-NOTE: The input image should be cropped to the centers of the frame corners, i.e. the outermost layer of features.
-This is a requirement for the
+Visualize spatial distribution of clusters.
 }

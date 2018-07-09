@@ -7,7 +7,8 @@
 spatial.heatmap(object, value, type = "expr", HE.list = NULL,
   palette = "spectral", invert.heatmap = FALSE, hide.legend = FALSE,
   bg.black = FALSE, xlim = c(1, 33), ylim = c(1, 35), ncols = NULL,
-  arrange = T, col.title = NULL, scale = "", size = 3, ...)
+  arrange = T, col.title = NULL, scale = "", size = 3,
+  hide.dropouts = F, ...)
 }
 \arguments{
 \item{object}{Object of class spaceST.}
@@ -33,7 +34,7 @@ spatial heatmap.}
 
 \item{ncols}{Number of columns in arranged plot table.}
 
-\item{arrange}{Arrange plots}
+\item{arrange}{Arrange plots.}
 
 \item{...}{Parameters passed to geom_point.}
 }

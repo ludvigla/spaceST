@@ -4,7 +4,8 @@
 \alias{spots.under.tissue}
 \title{Method spots.under.tissue for spaceST class.}
 \usage{
-spots.under.tissue(object, selection.files, delimiter = "_")
+spots.under.tissue(object, selection.files, delimiter = "_",
+  keep.filter = T)
 }
 \arguments{
 \item{object}{Object of class spaceST.}
@@ -13,6 +14,9 @@ spots.under.tissue(object, selection.files, delimiter = "_")
 sample matrices used to initiate the spaceST object.}
 
 \item{delimiter}{Delimiter for expr headers.}
+
+\item{keep.filter}{Set to FALSE if you don't want to apply the same filtering settings that were used when the
+spaceST object was initiated.}
 }
 \description{
 Subset spaceST object using spot selection tables from the ST spot detector.
