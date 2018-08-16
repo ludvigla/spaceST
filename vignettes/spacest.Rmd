@@ -1,5 +1,5 @@
 ---
-title: "Introdutction to spaceST"
+title: "Introduction to spaceST"
 author: "Ludvig Larsson"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
@@ -28,7 +28,7 @@ install_github("ludvigla/spaceST")
 ```
 
 ### 2. Prepare data
-The first is to load som gene expression ST data. The format of these expression datasets is important, because the feature coordinates will be collected from the headers of these datasets. The format required is features as columns and genes as rows. The headers need to have the following format: 
+The first step is to load gene expression matrices from an ST experiment. The format of these expression datasets is important, because the feature coordinates will be collected from the headers of these datasets. The format required is features as columns and genes as rows. The headers need to have the following format: 
 
     n_x_y
     
@@ -64,11 +64,11 @@ If you want to evaluate the quality of you ST datasets, you can visualize the nu
 
 ```{r, fig.show='hold', fig.width = 8, fig.height = 5}
 # QC plot
-plot_QC_spaceST(spST)
+plot_QC_spaceST(spST, bins = 40, alpha = 0.7, col2 = c("dark green", "purple"))
 ```
 ```{r, fig.show='hold', fig.width = 11, fig.height = 7}
 # Or if you want to split up relicates in separate plots
-plot_QC_spaceST(spST, separate = T)
+plot_QC_spaceST(spST, separate = T, bins = 40, alpha = 0.7, col2 = c("dark green", "purple"))
 ```
 
 ### 4. Select spots under tissue
@@ -81,7 +81,7 @@ Note that the same filtering settings will be used on the subset spaceST object 
 selection.files <- list("path1", "path2")
 
 # Don't forget to specify the delimiter 
-spST.subset <- spots.under.tissue(spST, selection.files, delimiter = "x")
+spST.subset <- spots_under_tissue(spST, selection.files, delimiter = "x")
 spST
 
 dim(spST)
@@ -105,8 +105,8 @@ spatial.heatmap(spST, value = "Nrgn", invert.heatmap = T, size = 3)
 Or if  you want to overlay the expression on top of the HE images.
 
 ```{r gene viz HE, fig.width = 11, fig.height = 5}
-HE.list <- list(system.file("data/HE_rep1.jpg", package = "spaceST"),
-                system.file("data/HE_rep2.jpg", package = "spaceST"))
+HE.list <- list(system.file("extdata/HE_rep1.jpg", package = "spaceST"),
+                system.file("extdata/HE_rep2.jpg", package = "spaceST"))
 spatial.heatmap(spST, value = "Nrgn", invert.heatmap = T, HE.list = HE.list, alpha = 0.6, size = 3)
 ```
 
@@ -122,7 +122,11 @@ spST <- NormalizespaceST(spST, method = "scran")
 ```{r load, echo=FALSE, results='hide',message=FALSE}
 load("~/breast_cancer/spaceST/spST")
 ```
-Now we can visualize the normalized expression data on the tissue.
+Now we can check the transcript per feature distributions and visualize the normalized expression data on the tissue.
+```{r QC after normalization, fig.show='hold', fig.width = 11, fig.height = 7}
+# Or if you want to split up relicates in separate plots
+plot_QC_spaceST(spST, separate = T, bins = 30, alpha = 0.7, col2 = c("dark green", "purple"))
+```
 
 ```{r gene viz norm, fig.width = 11, fig.height = 5}
 spatial.heatmap(spST, value = "Nrgn", type = "norm.data", invert.heatmap = T, HE.list = HE.list, alpha = 0.6, size = 3)
@@ -131,7 +135,7 @@ spatial.heatmap(spST, value = "Nrgn", type = "norm.data", invert.heatmap = T, HE
 ### 3. PCA
 A Principal Component analysis can be run on the expression data using the most variable genes. You can either select two components to compare in a scatter plot, or visualize each Principal Component separately on the tissue.
 
-```{r pca, fig.width = 4, fig.height = 3}
+```{r pca, fig.width = 8, fig.height = 6}
 spST <- spPCA(spST)
 plotPCA(spST, components = c(1, 2))
 ```
@@ -153,7 +157,7 @@ Running this function with default settings tests the 5000 most highly expressed
 
 The factor analysis should take some time to compute. Grab a coffee!
 ```{r, eval = FALSE}
-spST <- topic_compute(spST)
+spST <- topic_compute(spST, force.recalc = T)
 ```
 
 Topics can be visualized on the tissue using the spatial.heatmap() function.
@@ -179,6 +183,60 @@ You can also change rerun the clustering with different settings using the clust
 Below is an example of how to visualize the clusters on the tissue.
 
 ```{r clusters on tissue, fig.width = 11, fig.height = 5}
-spatial.clusters(spST, HE.list = HE.list, size = 3, alpha = 0.6)
+pal <- palette.select(palette = "spectral")
+cols <- rgb(pal(seq(0, 1, length.out = 5)), maxColorValue = 255)
+
+# You can run the clustering algorithm with a predefined minimum cluster size (default = 30)
+spST <- clusterST(spST, minClusterSize = 5)
+spatial.clusters(spST, HE.list = HE.list, size = 3, alpha = 0.6, cols = cols)
 ```
+
+## part IV: t-SNE 
+
+    1. Run t-SNE
+    2. Project t-SNE results on tissue
+
+### 1. t-SNE
+
+You can run a t-SNE algorithm (Rtsne package) to structure the spots in high dimensional space using the RunTSNEspaceST() function. By default, the function will use LDA results as input to the t-SNE algorithm, but you can also use data provided from other slots in the spaceST object. 
+
+```{r t-SNE}
+spST <- RunTSNEspaceST(object = spST, use.dims = "topics", dims = 3)
+
+# Visualize t-SNE results
+plotTSNE(spST, group_by = "clusters", cols = cols)
+```
+
+### 2. Project t-SNE results on tissue
+
+Another way of vizualising the t-SNE results is to color code each spot by the relative composition of t-SNE scores for each spot. The color code is computed for each spot by scaling and the t-SNE values to a channel in rgb space. This means that only three dimensions can be used.
+
+
+```{r t-SNE on tissue, fig.height = 6, fig.width = 6}
+spatial.heatmap(spST, value = spST@tsne, type = "", invert.heatmap = T, HE.list = HE.list, size = 3, alpha = 0.6)
+```
+
+
+
+## part V: Other visualization methods
+
+    1. Smooth visualization
+    2. Tesselation
+
+### 1. Smooth visualization
+
+```{r smooth}
+smooth.viz(object = spST, value = "PC3", type = "pca", HE.list = HE.list, overlay.spots = T, set.max.alpha = 0.3, alpha = 0.3, palette = "RdBu")
+```
+
+### 2. Tesselation
+
+```{r tesselation}
+tessViz(object = spST, polygon.mask = F, fill.empty = T, select.columns = c(2, 3), datatype = "reducedDims", scale.by.column = T)
+```
+
+## part VI: DE analysis
+
+    1. DE analysis
+    2. Volcano plot
 

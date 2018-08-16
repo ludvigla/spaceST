@@ -6,6 +6,9 @@
 \usage{
 normcounts(object)
 }
+\arguments{
+\item{object}{Object of class spaceST.}
+}
 \description{
 Method normcounts.
 }

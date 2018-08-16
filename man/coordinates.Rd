@@ -18,7 +18,7 @@ get_coordinates(x, delimiter = "_")
 \arguments{
 \item{x}{List of expression data.frames, data.frame or matrix.}
 
-\item{rep}{Get replicate column}
+\item{delimiter}{Specify character used to delimit coordinates in headers.}
 }
 \value{
 Data frame with replicate numbers, x and y coordinates

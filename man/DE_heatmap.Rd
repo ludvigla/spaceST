@@ -8,17 +8,20 @@ DE_heatmap(object, FDR.cutoff = 0.05, logFC.cutoff = 2, log.2 = T,
   type = "normalized", include.downregulated = F, scale.data = T)
 }
 \arguments{
-\item{object}{spaceST object with DE results}
+\item{object}{Object of class spaceST with DE results.}
 
-\item{FDR.cutoff}{cutoff for adjusted p-values}
+\item{FDR.cutoff}{Cutoff for adjusted p-values.}
 
-\item{logFC.cutoff}{cutof for logFC}
+\item{logFC.cutoff}{Cutoff for logFC.}
 
-\item{log.2}{log2 transform data}
+\item{log.2}{Log2 transform data.}
 
-\item{type}{select data type from spaceST object}
+\item{type}{Select data type from spaceST object.}
 
-\item{scale.data}{logical speficying whether or not values should be scaled}
+\item{include.downregulated}{Include downregulated genes when selecting gene to visualize in heatmap.
+Absolute value will be used for the logFC threshold.}
+
+\item{scale.data}{Logical speficying whether or not values should be scaled.}
 }
 \value{
 Heatmap of DE genes.

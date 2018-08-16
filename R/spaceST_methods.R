@@ -61,7 +61,7 @@ setMethod("show", signature = "spaceST", definition = function(object) {
 #'
 #' Function used to run a batch correction between samples.
 #' @param object Object of class spaceST.
-#' @seealso \link[countClust]{BatchCorrectedCounts}
+#' @seealso \link[CountClust]{BatchCorrectedCounts}
 #' @importFrom CountClust BatchCorrectedCounts
 #' @return Batch corrected data frame in slot "expr".
 #' @name batch.correct
@@ -91,29 +91,29 @@ setMethod(
 #' Method NormalizespaceST ST data.
 #'
 #' Normalization of gene expression data using either counts per 10k or scran.
+#' @name NormalizespaceST
+#' @rdname spaceST-methods
 #' @param object Object of class spaceST.
 #' @param method Select normalization method, default "cp10k" [options: "cp10k", "scran"].
 #' @param log2 Logical specifying whether or not data should be log2-transformed.
+#' @param pcount Pseudocount value for log2 tranformation (default = 1).
 #' @param clusters Integer vector specifying clusters used for normalization with scran on large gene expression matrices.
 #' By default, a clustering step is performed using \link[scran]{quickCluster} if there are more than 500 array spots in the
 #' expression matrix.
-#' @seealso \link[scater]{Normalize} and \link[scran]{computeSumFactors}
+#' @seealso \link[scater]{normalize} and \link[scran]{computeSumFactors}
 #' @importFrom scran quickCluster computeSumFactors
-#' @importFrom BiocGenerics sizeFactors
-#' @importFrom SingleCellExperiment logcounts
+#' @importFrom SingleCellExperiment logcounts sizeFactors
 #' @return Normalized expression data.
-#' @export
+#' @exportMethod NormalizespaceST
 setGeneric(name = "NormalizespaceST",
            def = function(object,
                           method = "scran",
                           log2 = F,
                           pcount = 1,
-                          clusters = NULL, ...
+                          clusters = NULL
            ) standardGeneric("NormalizespaceST"))
-#' @name NormalizespaceST
-#' @aliases NormalizespaceST,spaceST-methods
 #' @rdname spaceST-methods
-#' @export
+#' @aliases NormalizespaceST,spaceST-methods
 setMethod(
   f = "NormalizespaceST",
   signature = "spaceST",
@@ -121,7 +121,7 @@ setMethod(
                         method = "cp10k",
                         log2 = F,
                         pcount = 1,
-                        clusters = NULL, ...) {
+                        clusters = NULL) {
     if (class(object) != "spaceST"){
       stop("Wrong input format.")
     }
@@ -130,14 +130,14 @@ setMethod(
       object@norm.data <- log2(calc_cpm(expr.data) + 1)
     } else {
       if (method == "scran") {
-        sce <- SingleCellExperiment::SingleCellExperiment(assays = list(counts = expr.data, logcounts = log2(expr.data + pcount)))
+        sce <- SingleCellExperiment(assays = list(counts = expr.data, logcounts = log2(expr.data + pcount)))
         if (ncol(object@expr) > 700 | !is.null(clusters)) {
           if (!is.null(clusters)) {
-            sce <- computeSumFactors(sce, cluster = clusters)
+            sce <- scran::computeSumFactors(sce, cluster = clusters)
             print("Using provided clusters ...")
           } else {
             q.clust <- quickCluster(as.matrix(expr.data))
-            sce <- computeSumFactors(sce, cluster = q.clust)
+            sce <- scran::computeSumFactors(sce, cluster = q.clust)
           }
 
           object@meta.data$size_factor <- sizeFactors(sce)
@@ -162,18 +162,21 @@ setMethod(
 #' Method plotPCA.
 #'
 #' Plot principal components.
+#' @name plotPCA
+#' @rdname spaceST-methods
 #' @param object Object of class spaceST.
 #' @param components Integer or character vector of length 2 specifying two PC components to compare.
+#' @param ... Parameters passed to geom_point().
 #' @return PCA plot.
 #' @importFrom ggplot2 ggplot aes_string geom_point theme_classic scale_color_brewer labs
-#' @export
+#' @exportMethod plotPCA
 setGeneric(name = "plotPCA",
            def = function(object,
                           components = c(1, 2),
                           ...
            ) standardGeneric("plotPCA"))
 #' @rdname spaceST-methods
-#' @export
+#' @aliases plotPCA,spaceST-methods
 setMethod(
   f = "plotPCA",
   signature = "spaceST",
@@ -194,11 +197,82 @@ setMethod(
     components <- colnames(pcs)[components]
   }
   ggplot(pcs, aes_string(components[1], components[2], color = "replicate")) +
-    geom_point() +
+    geom_point(...) +
     theme_classic() +
     scale_color_brewer(palette = "Dark2") +
     labs(x = paste(components[1], round(pov[2, components[1]]*100, digits = 2), "%"), y = paste(components[2], round(pov[2, components[2]]*100, digits = 2), "%"))
 })
+
+
+
+#' Method plotTSNE.
+#'
+#' Plot t-SNE.
+#' @name plotTSNE
+#' @rdname spaceST-methods
+#' @param object Object of class spaceST.
+#' @param group_by character; Grouping variable for color.
+#' @param cols character; Specify colors for grouping variable.
+#' @param ... Parameters passed to geom_point().
+#' @return t-SNE plot.
+#' @importFrom ggplot2 ggplot aes_string geom_point theme_classic scale_color_brewer labs
+#' @exportMethod plotTSNE
+setGeneric(name = "plotTSNE",
+           def = function(object,
+                          group_by = NULL,
+                          cols = NULL,
+                          ...
+           ) standardGeneric("plotTSNE"))
+#' @rdname spaceST-methods
+#' @aliases plotPCA,spaceST-methods
+setMethod(
+  f = "plotTSNE",
+  signature = "spaceST",
+  definition = function(object,
+                        group_by = NULL,
+                        cols = NULL,
+                        ...
+  ) {
+
+    if (length(object@tsne) == 0) {
+      stop("tsne not present in spaceST object ...")
+    }
+
+    gg.df <- as.data.frame(object@tsne[, 1:2])
+    colnames(gg.df) <- c("x", "y")
+
+    if (is.null(cols)) {
+      cols <- c("royalblue3", "mediumpurple4", "navajowhite2", "chocolate", "firebrick", "yellow2"," aquamarine", "orange1", "olivedrab2", "darkgreen", "pink", "black", "navy", "khaki3", "lightsteelblue1")
+    }
+
+    if (is.null(group_by)) {
+      p <- ggplot(gg.df, aes(x = x, y = y))
+    } else if (group_by == "clusters") {
+      clusters <- object@meta.data$clusters
+      p <- ggplot(gg.df, aes(x = x, y = y, colour = factor(clusters))) +
+        scale_color_manual(values = cols) +
+        labs(colour = "cluster", title = paste("t-SNE", sep = ""))
+    } else if (group_by == "clusters.snn") {
+      clusters <- object@meta.data$clusters.snn
+      p <- ggplot(gg.df, aes(x = x, y = y, colour = factor(clusters))) +
+        scale_color_manual(values = cols) +
+        labs(colour = "cluster", title = paste("t-SNE", sep = ""))
+    } else if (group_by == "sample") {
+      sample <- object@coordinates$replicate
+      p <- ggplot(gg.df, aes(x = x, y = y, colour = factor(sample))) +
+        scale_color_manual(values = cols) +
+        labs(colour = "sample", title = paste("t-SNE", sep = ""))
+    }
+
+    p <- p + geom_point(...) +
+      theme_classic() +
+      labs(x = "t-SNE dim 1", y = "t-SNE dim 2")
+    plot(p)
+    })
+
+
+
+
 #' Plot unique genes per feature and transcripts per feature.
 #'
 #' This function is used to plot the unique genes per feature and transcipts per feature
@@ -210,19 +284,22 @@ setMethod(
 #' @param ... Parameters passed to geom_histogram.
 #' @return Histograms of unique genes per feature and transcripts per feature distributions.
 #' @export
-setGeneric("plot_QC_spaceST", function(object, separate = F, bins = 20, ...) standardGeneric("plot_QC_spaceST"))
+setGeneric("plot_QC_spaceST", function(object, separate = F, bins = 20, type = "norm.data", ...) standardGeneric("plot_QC_spaceST"))
 #' @name plot_QC_spaceST
-#' @aliases plot.QC.spaceST,spaceST-methods
+#' @aliases plot_QC_spaceST,spaceST-methods
 #' @rdname spaceST-methods
 #' @export
-setMethod(f = "plot_QC_spaceST", signature = "spaceST", definition = function(object, separate = F, bins, ...) {
+setMethod(f = "plot_QC_spaceST", signature = "spaceST", definition = function(object, separate = F, bins = 20, type = "norm.data", ...) {
   if (class(object) != "spaceST") {
     stop("Wrong input format")
   }
-  if (length(object@expr) > 0) {
-    samples <- object@coordinates$replicate
+  samples <- object@coordinates$replicate
+  if (length(object@norm.data) > 0 & type == "norm.data") {
+    df <- cbind(ST_statistics(as.matrix(object@norm.data)), samples = samples)
+    ST_statistics_plot(df, separate, bins = bins, ...)
+  } else if (type == "expr") {
     df <- cbind(ST_statistics(as.matrix(object@expr)), samples = samples)
-    ST_statistics_plot(df, separate, bins = 20, ...)
+    ST_statistics_plot(df, separate, bins = bins, ...)
   }
 })
 
@@ -236,7 +313,10 @@ setMethod(f = "plot_QC_spaceST", signature = "spaceST", definition = function(ob
 #' @param ... Parameters passed to \link[stats]{prcomp}.
 #' @seealso \link[stats]{prcomp}
 #' @export
-setGeneric("spPCA", function(object, ntop = 500, exprs_values = "norm.data", ...) standardGeneric("spPCA"))
+setGeneric("spPCA", function(object,
+                             ntop = 500,
+                             exprs_values = "norm.data",
+                             ...) standardGeneric("spPCA"))
 #' @export
 #' @name spPCA
 #' @aliases spPCA,spaceST-methods
@@ -265,7 +345,7 @@ setMethod(
 
 
 
-#' Method spots.under.tissue for spaceST class.
+#' Method spots_under_tissue for spaceST class.
 #'
 #' Subset spaceST object using spot selection tables from the ST spot detector.
 #' @param object Object of class spaceST.
@@ -276,13 +356,13 @@ setMethod(
 #' spaceST object was initiated.
 #' @seealso \link[CreatespaceSTobject]{spaceST}
 #' @export
-setGeneric("spots.under.tissue", function(object, selection.files, delimiter = "_", keep.filter = T) standardGeneric("spots.under.tissue"))
+setGeneric("spots_under_tissue", function(object, selection.files, delimiter = "_", keep.filter = T) standardGeneric("spots_under_tissue"))
 #' @rdname spaceST-methods
 #' @name spots.under.tissue
 #' @aliases spots.under.tissue,spaceST-methods
 #' @export
 setMethod(
-  "spots.under.tissue",
+  "spots_under_tissue",
   signature = "spaceST",
   definition = function(
     object,
@@ -337,7 +417,8 @@ setMethod(
 #' @param min.exp Integer value specifying the lowest expression value allowed at least min.features number of features.
 #' @param min.features Integer value specifying the lowest number of features with at least min.exp.
 #' @param filter.genes A character vector specifying genes that should be filtered from the expression data.
-#' @param delimiter Delimiter specifying header format.
+#' @param force.filter Force filter on a spaceST object.
+#' @param delimiter Character used to delimit coordinates in headers.
 #' @export
 setGeneric("filter", function(object, unique.genes = 300, min.exp = 2, min.features = 15, filter.genes = NULL, force.filter = FALSE, delimiter = "_") standardGeneric("filter"))
 #' @name filter
@@ -363,7 +444,7 @@ setMethod(
   if (check & !force.filter) {
     stop("Set force.filter = TRUE to initiate new spaceST object with supplied filtering settings. All data excep 'expr' will be lost.")
   } else if (check & force.filter) {
-    object <- CreatespaceSTobject(as.matrix(object@expr), unique.genes, min.exp, min.features, filter.genes, delimiter)
+    object <- CreatespaceSTobject(raw.data = as.matrix(object@expr), unique.genes, min.exp, min.features, filter.genes, delimiter)
   } else {
     expr <- object@expr
     if (!is.null(filter.genes)){
@@ -402,40 +483,48 @@ setMethod("dim", "spaceST", function(x) dim(x@expr))
 
 #' Method counts.
 #' @name counts
+#' @param object Object of class spaceST.
 #' @exportMethod counts
 setGeneric("counts", function(object) standardGeneric("counts"))
 
 #' @name counts
 #' @rdname spaceST-methods
+#' @param object Object of class spaceST.
 #' @aliases counts,spaceST-methods
 setMethod("counts", "spaceST", function(object) as.matrix(object@expr))
 
 #' Method normcounts.
 #' @name normcounts
+#' @param object Object of class spaceST.
 #' @exportMethod normcounts
 setGeneric("normcounts", function(object) standardGeneric("normcounts"))
 
 #' @name normcounts
 #' @rdname spaceST-methods
+#' @param object Object of class spaceST.
 #' @aliases normcounts,spaceST-methods
 setMethod("normcounts", "spaceST", function(object) as.matrix(object@norm.data))
 
 #' Method topic.clusters.
 #' @name topic.clusters
+#' @param @param object Object of class spaceST.
 #' @exportMethod topic.clusters
 setGeneric("topic.clusters", function(object) standardGeneric("topic.clusters"))
 
 #' @name topic.clusters
 #' @rdname spaceST-methods
+#' @param object Object of class spaceST.
 #' @aliases topic.clusters,spaceST-methods
 setMethod("topic.clusters", "spaceST", function(object) object@meta.data$clusters)
 
 #' Method topic.clusters.
 #' @name getLDA
+#' @param object Object of class spaceST.
 #' @exportMethod getLDA
 setGeneric("getLDA", function(object) standardGeneric("getLDA"))
 
 #' @name getLDA
 #' @rdname spaceST-methods
+#' @param object Object of class spaceST.
 #' @aliases getLDA,spaceST-methods
 setMethod("getLDA", "spaceST", function(object) object@lda.results)

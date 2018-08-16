@@ -18,7 +18,9 @@ filter(object, unique.genes = 300, min.exp = 2, min.features = 15,
 
 \item{filter.genes}{A character vector specifying genes that should be filtered from the expression data.}
 
-\item{delimiter}{Delimiter specifying header format.}
+\item{force.filter}{Force filter on a spaceST object.}
+
+\item{delimiter}{Character used to delimit coordinates in headers.}
 }
 \description{
 Apply filter to spaceST data.

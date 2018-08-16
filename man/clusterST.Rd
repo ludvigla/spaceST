@@ -4,8 +4,8 @@
 \alias{clusterST}
 \title{Calculate clusters based on topics.}
 \usage{
-clusterST(object, method.dist = "euclidean", method.tree = "ward.D2",
-  minClusterSize = 30)
+clusterST(object = NULL, method.dist = "euclidean",
+  method.tree = "ward.D2", minClusterSize = 30, custom.matrix = NULL)
 }
 \arguments{
 \item{object}{Object of class spaceST.}
@@ -15,6 +15,8 @@ clusterST(object, method.dist = "euclidean", method.tree = "ward.D2",
 \item{method.tree}{Set clustering method.}
 
 \item{minClusterSize}{Integer value specifying the minimum cluster size allowed.}
+
+\item{custom.matrix}{Provide a matrix to perform hierarchical clustering on.}
 }
 \value{
 Integer vector specifying cluster identity of each feature.

@@ -4,7 +4,8 @@
 \alias{ST_statistics_plot}
 \title{Quality Control plot}
 \usage{
-ST_statistics_plot(df, separate = F, bins = NULL, ...)
+ST_statistics_plot(df, separate = F, bins = NULL,
+  col2 = c(scales::muted("red"), scales::muted("blue")), ...)
 }
 \arguments{
 \item{df}{Input quality control data.frame.}

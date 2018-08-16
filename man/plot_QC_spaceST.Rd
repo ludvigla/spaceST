@@ -4,7 +4,8 @@
 \alias{plot_QC_spaceST}
 \title{Plot unique genes per feature and transcripts per feature.}
 \usage{
-plot_QC_spaceST(object, separate = F, bins = 20, ...)
+plot_QC_spaceST(object, separate = F, bins = 20, type = "norm.data",
+  ...)
 }
 \arguments{
 \item{object}{Object of class spaceST.}

@@ -6,6 +6,9 @@
 \usage{
 calc_cp10k(df)
 }
+\arguments{
+\item{df}{Object of class matrix or data.frame.}
+}
 \description{
 Calculate cp10k
 }

@@ -4,19 +4,21 @@
 \alias{volcano_plot_spaceST}
 \title{Volcano plot}
 \usage{
-volcano_plot_spaceST(object, cluster, FDR.cutoff = 0.05, logFC.cutoff = 1,
-  annotate.top.genes = NULL, widget.out = NULL)
+volcano_plot_spaceST(object, cluster, FDR.cutoff = 0.05,
+  logFC.cutoff = 1, annotate.top.genes = NULL, widget.out = NULL)
 }
 \arguments{
-\item{object}{spaceST object with differentially expressed genes}
+\item{object}{An object of class spaceST with differentially expressed genes.}
 
-\item{FDR.cutoff}{set cutoff threshold for adjusted p-values}
+\item{cluster}{Select cluster to compare woith background.}
 
-\item{logFC.cutoff}{set log2-foldchange cutoff}
+\item{FDR.cutoff}{Set cutoff threshold for adjusted p-values.}
 
-\item{annotate.top.genes}{specify whether the top genes should be annotated in the plot}
+\item{logFC.cutoff}{Set log2-foldchange cutoff.}
 
-\item{widget}{save html widget to file path}
+\item{annotate.top.genes}{Specify whether the top genes should be annotated in the plot.}
+
+\item{widget.out}{Save html widget to file path.}
 }
 \description{
 create a volcano plot of differentiually expressed genes

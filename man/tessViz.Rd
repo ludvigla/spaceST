@@ -4,12 +4,12 @@
 \alias{tessViz}
 \title{Plot tesselated object.}
 \usage{
-tessViz(object, select.columns = 1:3, xlim = c(0, 34), ylim = c(0, 36),
-  scale.by.column = FALSE, datatype = "topics", add.points = F,
+tessViz(object, select.columns = 1:3, xlim = c(0, 34), ylim = c(0,
+  36), scale.by.column = FALSE, datatype = "topics", add.points = F,
   outline.color = NA, bg = "black", inv.col = F, alpha = 1,
   scatter = NULL, return.list = FALSE, cell.col = "cyan",
   cell.size = 0.01, cell.alpha = 0.1, palette = "offwhite.to.black",
-  max.num.cols = 20, polygon.mask = TRUE, fill.empty = FALSE)
+  max.num.cols = 20, polygon.mask = TRUE, fill.empty = FALSE, ...)
 }
 \arguments{
 \item{object}{Sbject of class spaceST.}
@@ -32,6 +32,11 @@ tessViz(object, select.columns = 1:3, xlim = c(0, 34), ylim = c(0, 36),
 
 \item{inv.col}{Invert colors [default = FALSE].}
 
+\item{alpha}{Set alpha of polygons [default = 1].}
+
+\item{scatter}{Provide list of data.frames with coordinates to overlay tesselated surface. Colnames
+have to be c("x", "y") [default = NULL].}
+
 \item{return.list}{Return list of plots instead of combining them into a grid [default = FALSE].}
 
 \item{cell.col}{Color of points (spots or scatter) [default = "cyan"].}
@@ -40,7 +45,15 @@ tessViz(object, select.columns = 1:3, xlim = c(0, 34), ylim = c(0, 36),
 
 \item{cell.alpha}{Color of points (spots or scatter) [default = 0.1].}
 
+\item{palette}{Select color palette \link[spaceST]{palette.select}.}
+
+\item{max.num.cols}{Select maximum number of columns to plot [default = 20].}
+
+\item{polygon.mask}{Logical; Specify whether or not the background should be masked [default = TRUE].}
+
 \item{fill.empty}{Fill empty array spots with 0 values.}
+
+\item{...}{Parameters passed to geom_point().}
 }
 \description{
 Sisualize some value on an ST grid using voronoi tesselation.

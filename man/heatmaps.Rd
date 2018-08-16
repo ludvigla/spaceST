@@ -7,7 +7,7 @@
 spatial.heatmap(object, value, type = "expr", HE.list = NULL,
   palette = "spectral", invert.heatmap = FALSE, hide.legend = FALSE,
   bg.black = FALSE, xlim = c(1, 33), ylim = c(1, 35), ncols = NULL,
-  arrange = T, col.title = NULL, scale = "", size = 3,
+  arrange = TRUE, col.title = NULL, scale = "", size = 3,
   hide.dropouts = F, ...)
 }
 \arguments{
@@ -35,6 +35,14 @@ spatial heatmap.}
 \item{ncols}{Number of columns in arranged plot table.}
 
 \item{arrange}{Arrange plots.}
+
+\item{col.title}{Give the color legend a title.}
+
+\item{scale}{Set this parameter to "colwise" to scale each column separately.}
+
+\item{size}{Set size of markers.}
+
+\item{hide.dropouts}{Logical; Set to TRUE if you want to hide spots with 0 values.}
 
 \item{...}{Parameters passed to geom_point.}
 }

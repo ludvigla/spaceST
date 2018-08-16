@@ -6,6 +6,9 @@
 \usage{
 topic.clusters(object)
 }
+\arguments{
+\item{@param}{object Object of class spaceST.}
+}
 \description{
 Method topic.clusters.
 }

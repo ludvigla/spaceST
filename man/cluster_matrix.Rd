@@ -10,8 +10,6 @@ cluster_matrix(object, clusters)
 \item{object}{Expression data.frame, matrix or object of class spaceST.}
 
 \item{clusters}{Integer vector specifying cluster identity of each feature.}
-
-\item{CountClust}{ExtractTopFeatures}
 }
 \value{
 Integer vector specifying cluster identity of each feature.

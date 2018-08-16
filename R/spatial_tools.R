@@ -14,12 +14,18 @@
 #' @param bg.black Set background color to black.
 #' @param xlim,ylim Set limits of x/y axes. [default: xlim = c(1, 34), ylim = c(1, 36)]
 #' @param arrange Arrange plots.
+#' @param col.title Give the color legend a title.
+#' @param scale Set this parameter to "colwise" to scale each column separately.
+#' @param size Set size of markers.
+#' @param hide.dropouts Logical; Set to TRUE if you want to hide spots with 0 values.
 #' @param ncols Number of columns in arranged plot table.
 #' @param ... Parameters passed to geom_point.
 #' @importFrom grid rasterGrob
 #' @importFrom jpeg readJPEG
-#' @importFrom ggplot2 ggplot geom_point annotation_custom theme element_blank labs theme_void scale_color_gradientn
+#' @importFrom ggplot2 ggplot geom_point annotation_custom theme element_blank labs theme_void scale_color_gradientn element_text
 #' @importFrom grid unit
+#' @importFrom grDevices rgb
+#' @importFrom stats na.omit
 #' @rdname heatmaps
 #' @export
 spatial.heatmap <- function(
@@ -34,7 +40,7 @@ spatial.heatmap <- function(
   xlim = c(1, 33),
   ylim = c(1, 35),
   ncols = NULL,
-  arrange = T,
+  arrange = TRUE,
   col.title = NULL,
   scale = "",
   size = 3,
@@ -151,7 +157,7 @@ spatial.heatmap <- function(
 #' Visualize spatial distribution of clusters.
 #'
 #' @param object Object of class spaceST.
-#' @param Clusters Integer/numeric vector specifying clusters.
+#' @param clusters Integer/numeric vector specifying clusters.
 #' @param HE.list List of paths to HE images in jpeg format that should be used as a background for the
 #' spatial heatmap.
 #' @param arrange Arrange plots.
@@ -161,10 +167,11 @@ spatial.heatmap <- function(
 #' specific colors for each cluster by naming the character vector with the cluster ids.
 #' @param ... additional parameters passed to geom_point(), defining the attributes of the feature coordinate points.
 #' @importFrom grid rasterGrob
-#' @importFrom ggplot2 ggplot geom_point annotation_custom theme element_blank labs scale_color_gradientn theme_void
+#' @importFrom ggplot2 ggplot geom_point annotation_custom theme element_blank labs scale_color_gradientn theme_void scale_color_manual
 #' @return Plot of clustered featured overlayed on black and white HE image.
 #' @export
-spatial.clusters <- function(object, clusters = NULL,
+spatial.clusters <- function(object,
+                             clusters = NULL,
                              HE.list = NULL,
                              arrange = T,
                              ncols = NULL,

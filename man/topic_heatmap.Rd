@@ -4,8 +4,8 @@
 \alias{topic_heatmap}
 \title{Plot heatmap of lda results.}
 \usage{
-topic_heatmap(object, method.dist = "euclidean", method.tree = "ward.D2",
-  minClusterSize = 30, cols = NULL)
+topic_heatmap(object, method.dist = "euclidean",
+  method.tree = "ward.D2", minClusterSize = 30, cols = NULL)
 }
 \arguments{
 \item{object}{Object of class spaceST.}

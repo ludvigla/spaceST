@@ -16,5 +16,5 @@ Batch corrected data frame in slot "expr".
 Function used to run a batch correction between samples.
 }
 \seealso{
-\link[countClust]{BatchCorrectedCounts}
+\link[CountClust]{BatchCorrectedCounts}
 }

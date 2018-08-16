@@ -5,7 +5,8 @@
 \title{Smooth visualization of gene expression patterns}
 \usage{
 smooth.viz(object, value, type = "norm.data", HE.list = NULL,
-  overlay.spots = FALSE, set.max.alpha = 0.7, ...)
+  overlay.spots = FALSE, set.max.alpha = 0.7, palette = "spectral",
+  ...)
 }
 \arguments{
 \item{object}{Object of class spaceST.}
@@ -13,7 +14,7 @@ smooth.viz(object, value, type = "norm.data", HE.list = NULL,
 \item{value}{Target vector to visualize. This value can be chosen from any slot of the spaceST object
 containing data linked to array spots.}
 
-\item{type}{Select dataset where the value can be found [options: "expr", "norm.data", "pca"]}
+\item{type}{Select dataset where the value can be found [options: "expr", "norm.data", "pca", "topics]}
 
 \item{HE.list}{List of paths to HE images in jpeg format that should be used as a background for the
 spatial heatmap.}
@@ -21,6 +22,8 @@ spatial heatmap.}
 \item{overlay.spots}{Set to TRUE if you want to overlay array spots on the smoothed heatmap.}
 
 \item{set.max.alpha}{Sets maximum alpha value.}
+
+\item{palette}{character; SPecify color palette \link[spaceST]{palette.select}.}
 
 \item{...}{Parameters passed to geom_point() in the array spot layer.}
 }

@@ -5,7 +5,8 @@
 \title{Function to convert the knn graph into the snn graph. Stored in a sparse
 representation.}
 \usage{
-CalcSNNSparse(cell.names, k.param, nn.large, nn.ranked, prune.SNN, print.output)
+CalcSNNSparse(cell.names, k.param, nn.large, nn.ranked, prune.SNN,
+  print.output)
 }
 \arguments{
 \item{cell.names}{A vector of cell names which will correspond to the row/
@@ -20,14 +21,14 @@ k.param * k.scale)}
 k.param nearest neighbors. Used to define Jaccard
 distances between any two cells}
 
-\item{print.output}{Whether or not to print output to the console}
-
-\item{prune.snn}{Sets the cutoff for acceptable Jaccard distances when
+\item{prune.SNN}{Sets the cutoff for acceptable Jaccard distances when
 computing the neighborhood overlap for the SNN
 construction. Any edges with values less than or equal to
 this will be set to 0 and removed from the SNN graph.
 Essentially sets the strigency of pruning (0 --- no
 pruning, 1 --- prune everything).}
+
+\item{print.output}{Whether or not to print output to the console}
 }
 \value{
 Returns an adjacency matrix representation of the SNN

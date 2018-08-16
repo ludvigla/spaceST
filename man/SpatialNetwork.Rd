@@ -6,26 +6,33 @@
 \usage{
 SpatialNetwork(object, subset_by = NULL, color_by = "clusters",
   select.clust.group = 1, select.rep.group = NULL,
-  mode = "fruchtermanreingold", vertex.size = 1, edge.color = "black",
-  edge.size = 0.1, clusters.snn = F, ...)
+  mode = "fruchtermanreingold", vertex.size = 1,
+  edge.color = "black", edge.size = 0.1, clusters.snn = F,
+  cols = NULL, ...)
 }
 \arguments{
-\item{subset_by}{Select attribute to subset igraph by, default NULL (options: "clusters", "replicate")}
+\item{object}{Object of class spaceST.}
 
-\item{color_by}{Select attribute to color vertices by (options: "clusters", "replicate", "clust_and_rep)}
+\item{subset_by}{Select attribute to subset igraph by, default NULL (options: "clusters", "replicate").}
 
-\item{select.clust.group}{Select cluster by cluster number}
+\item{color_by}{Select attribute to color vertices by (options: "clusters", "replicate", "clust_and_rep).}
 
-\item{select.rep.group}{Select replicate by replicate ID}
+\item{select.clust.group}{Select cluster by cluster number.}
+
+\item{select.rep.group}{Select replicate by replicate ID.}
 
 \item{mode}{Select mode for network object, default NULL (options: "spatial", "circle", "kamadakawai", ...
-For more options, see available placement algorithms in the sna package)}
+For more options, see available placement algorithms in the sna package).}
 
-\item{vertex.size}{Size of nodes/vertices}
+\item{vertex.size}{Size of nodes/vertices.}
 
-\item{edge.color}{Color edges of network}
+\item{edge.color}{Color edges of network.}
 
-\item{edge.size}{Select size for edges in network}
+\item{edge.size}{Select size for edges in network.}
+
+\item{clusters.snn}{Cluster data using network based approach.}
+
+\item{cols}{character; Specify colors of grouping variables.}
 
 \item{...}{Parameters passed to ggnet2}
 }

@@ -4,11 +4,11 @@
 \alias{merge_exp_list}
 \title{Merge and filter expression datasets}
 \usage{
-merge_exp_list(x, unique.genes = 0, min.exp = 0, min.features = 0,
-  filter.genes = NULL, delimiter = "_")
+merge_exp_list(ls, mc.cores = NULL, unique.genes = 0, min.exp = 0,
+  min.features = 0, filter.genes = NULL, delimiter = "_")
 }
 \arguments{
-\item{x}{List of exrpression data frames, data.frame or matrix.}
+\item{ls}{List of expression data.frames, data.frame or matrix.}
 
 \item{unique.genes}{Integer value specifying number of unique genes allowed in a feature.}
 

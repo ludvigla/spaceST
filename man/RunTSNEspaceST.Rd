@@ -5,24 +5,52 @@
 \title{t-SNE of spaceST data}
 \usage{
 RunTSNEspaceST(object, dims = 2, initial.dims = 50, theta = 0,
-  check_duplicates = FALSE, pca = TRUE, perplexity = 15,
+  check_duplicates = FALSE, pca = FALSE, perplexity = 15,
   max_iter = 1000, verbose = FALSE, seed = 0, plot.tSNE = FALSE,
-  use.dims = "topics", select.dims = NULL, clusters = NULL)
+  use.dims = "topics", select.dims = NULL, group_by = NULL,
+  cols = NULL, ...)
 }
 \arguments{
 \item{object}{A spaceST object}
 
-\item{seed}{Set seed for reproducibility}
+\item{dims}{integer; Output dimensionality (default: 2)}
 
-\item{plot.tSNE}{Logical specifying whether or not t-SNE results should be plotted}
+\item{initial.dims}{integer; the number of dimensions that should be retained in the initial PCA step (default: 50).
+Only applicable if pca = TRUE.}
 
-\item{use.dims}{Specify what dimensions should be used for t-SNE (currently only "topics" available)}
+\item{theta}{numeric; Speed/accuracy trade-off (increase for less accuracy), set to 0.0 for exact TSNE (default: 0.5).}
 
-\item{clusters}{Integer vector used to color features in t-SNE plot}
+\item{check_duplicates}{logical; Checks whether duplicates are present. It is best to make sure there are no duplicates present
+and set this option to FALSE, especially for large datasets (default: TRUE).}
+
+\item{pca}{logical; Whether an initial PCA step should be performed (default: FALSE.}
+
+\item{perplexity}{numeric; Perplexity parameter.}
+
+\item{max_iter}{integer; Number of iterations (default: 1000).}
+
+\item{verbose}{logical; Whether progress updates should be printed (default: FALSE).}
+
+\item{seed}{Set seed for reproducibility.}
+
+\item{plot.tSNE}{logical specifying whether or not t-SNE results should be plotted.}
+
+\item{use.dims}{specify what dimensions should be used for t-SNE (currently only "topics" available).}
+
+\item{select.dims}{integer; Select specific dimensions of input data, i.e. columns (default: NULL).}
+
+\item{cols}{character; Specify colors for grouping variable.}
+
+\item{...}{Parameters passed to Rtsne.}
+
+\item{clusters}{integer vector used to color features in t-SNE plot.}
 }
 \value{
 Matrix with t-SNE results
 }
 \description{
 Run t-SNE on spaceST object. Results are saved in the tsne slot.
+}
+\seealso{
+\link[Rtsne]{Rtsne}
 }

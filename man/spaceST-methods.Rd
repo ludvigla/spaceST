@@ -6,10 +6,15 @@
 \alias{batch.correct}
 \alias{batch.correct,spaceST-methods}
 \alias{NormalizespaceST}
+\alias{NormalizespaceST,spaceST-method}
 \alias{NormalizespaceST,spaceST-methods}
+\alias{plotPCA}
 \alias{plotPCA,spaceST-method}
+\alias{plotPCA,spaceST-methods}
+\alias{plotTSNE}
+\alias{plotTSNE,spaceST-method}
 \alias{plot_QC_spaceST}
-\alias{plot.QC.spaceST,spaceST-methods}
+\alias{plot_QC_spaceST,spaceST-methods}
 \alias{spPCA}
 \alias{spPCA,spaceST-methods}
 \alias{spots.under.tissue}
@@ -30,17 +35,27 @@
 \usage{
 \S4method{batch.correct}{spaceST}(object)
 
-\S4method{NormalizespaceST}{spaceST}(object, method = "cp10k", log2 = F,
-  pcount = 1, clusters = NULL, ...)
+NormalizespaceST(object, method = "scran", log2 = F, pcount = 1,
+  clusters = NULL)
+
+\S4method{NormalizespaceST}{spaceST}(object, method = "cp10k",
+  log2 = F, pcount = 1, clusters = NULL)
+
+plotPCA(object, components = c(1, 2), ...)
 
 \S4method{plotPCA}{spaceST}(object, components = c(1, 2), ...)
 
-\S4method{plot_QC_spaceST}{spaceST}(object, separate = F, bins = 20, ...)
+plotTSNE(object, group_by = NULL, cols = NULL, ...)
 
-\S4method{spPCA}{spaceST}(object, ntop = 500, exprs_values = "norm.data",
-  ...)
+\S4method{plotTSNE}{spaceST}(object, group_by = NULL, cols = NULL, ...)
 
-\S4method{spots.under.tissue}{spaceST}(object, selection.files,
+\S4method{plot_QC_spaceST}{spaceST}(object, separate = F, bins = 20,
+  type = "norm.data", ...)
+
+\S4method{spPCA}{spaceST}(object, ntop = 500,
+  exprs_values = "norm.data", ...)
+
+\S4method{spots_under_tissue}{spaceST}(object, selection.files,
   delimiter = "_", keep.filter = T)
 
 \S4method{filter}{spaceST}(object, unique.genes = 300, min.exp = 2,
@@ -59,9 +74,55 @@
 }
 \arguments{
 \item{object}{Object of class spaceST.}
+
+\item{method}{Select normalization method, default "cp10k" [options: "cp10k", "scran"].}
+
+\item{log2}{Logical specifying whether or not data should be log2-transformed.}
+
+\item{pcount}{Pseudocount value for log2 tranformation (default = 1).}
+
+\item{clusters}{Integer vector specifying clusters used for normalization with scran on large gene expression matrices.
+By default, a clustering step is performed using \link[scran]{quickCluster} if there are more than 500 array spots in the
+expression matrix.}
+
+\item{components}{Integer or character vector of length 2 specifying two PC components to compare.}
+
+\item{...}{Parameters passed to geom_point().}
+
+\item{group_by}{character; Grouping variable for color.}
+
+\item{cols}{character; Specify colors for grouping variable.}
+
+\item{object}{Object of class spaceST.}
+
+\item{object}{Object of class spaceST.}
+
+\item{object}{Object of class spaceST.}
+
+\item{...}{Parameters passed to geom_point().}
+
+\item{object}{Object of class spaceST.}
+
+\item{object}{Object of class spaceST.}
+
+\item{object}{Object of class spaceST.}
+
+\item{object}{Object of class spaceST.}
+}
+\value{
+Normalized expression data.
+
+PCA plot.
+
+t-SNE plot.
 }
 \description{
-space-ST methods.
+Normalization of gene expression data using either counts per 10k or scran.
 
-Method dim
+Plot principal components.
+
+Plot t-SNE.
+}
+\seealso{
+\link[scater]{normalize} and \link[scran]{computeSumFactors}
 }

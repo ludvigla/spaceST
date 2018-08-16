@@ -12,6 +12,7 @@
 #' @param delimiter Delimiter specifying header format.
 #' @return A spaceST object containing a merged expression matrix of gene expression counts.
 #' @importFrom CountClust BatchCorrectedCounts
+#' @importFrom utils packageVersion
 #' @export
 CreatespaceSTobject <- function(
   raw.data,
@@ -34,13 +35,15 @@ CreatespaceSTobject <- function(
       filter.genes = filter.genes),
     version = spaceST.version
   )
-  object@expr <- as(merge_exp_list(
-    raw.data, unique.genes,
-    min.exp, min.features,
+  object@expr <- merge_exp_list(
+    ls = raw.data,
+    unique.genes = unique.genes,
+    min.exp = min.exp,
+    min.features = min.features,
     filter.genes = filter.genes,
     delimiter = delimiter
-  ), "dgCMatrix")
-  object@coordinates <- get_coordinates(object@expr, delimiter)
+  )
+  object@coordinates <- get_coordinates(object@expr, delimiter = delimiter)
   object@status.expr <- "filtered raw data"
   return(object)
 }

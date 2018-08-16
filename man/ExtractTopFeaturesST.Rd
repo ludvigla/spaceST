@@ -9,6 +9,19 @@ ExtractTopFeaturesST(object, top_features = 1000, method = "poisson",
 }
 \arguments{
 \item{object}{Object of class spaceST.}
+
+\item{method}{The underlying model assumed for KL divergence measurement. Two choices considered are
+"bernoulli" and "poisson". Default: poisson.}
+
+\item{shared}{if TRUE, then we report genes that can be highly expressed in more than one cluster.
+Else, we stick to only those genes that are highest expressed only in a specific cluster.}
+
+\item{top.features}{The top features in each cluster k that are selected based on the feature's ability
+to distinguish cluster k from cluster 1, …, K for all cluster k < l. Default: 1000.}
+
+\item{option}{if "min", for each cluster k, we select features that maximize the minimum KL divergence
+of cluster k against all other clusters for each feature. If "max", we select features that maximize
+the maximum KL divergence of cluster k against all other clusters for each feature.}
 }
 \description{
 Extract top features

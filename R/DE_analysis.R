@@ -6,12 +6,13 @@
 #' @param clusters Integer vector of cluster IDs or character specifying existing cluster vector ("topic", "SNN")
 #' @param verbose Print messages
 #' @param pvalue pvalue cutoff
-#' @importFrom scater newSCESet
 #' @importFrom scran convertTo
-#' @importFrom edgeR glmLRT glmFit topTags estimateDisp glmFit
+#' @importFrom stats hclust dist model.matrix
+#' @importFrom SingleCellExperiment SingleCellExperiment
+#' @importFrom edgeR estimateDisp glmLRT topTags
 #' @return Topic matrix
 RunDEspaceST <- function(spST, clusters = "topic", verbose = TRUE, pvalue = 0.05) {
-  stopifnot(length(spST@norm.data) > 0)
+  stopifnot(length(spST@meta.data$size_factor) > 0)
   if (clusters == "topic") {
     stopifnot(!is.null(spST@meta.data$clusters))
     clusters <- spST@meta.data$clusters
@@ -38,12 +39,14 @@ RunDEspaceST <- function(spST, clusters = "topic", verbose = TRUE, pvalue = 0.05
   }
 
   # This step will take some time to compute. Grab a coffee!
+  sce <- SingleCellExperiment(assay = list(counts = as.matrix(spST@expr), logcounts = log2(as.matrix(spST@expr) + 1)))
+  sizeFactors(sce) <- spST@meta.data$size_factor
+  y <- convertTo(sce, type = "edgeR")
   fit.list <- lapply(1:length(design.list), function(x) {
     design <- design.list[[x]]
-    sce = SingleCellExperiment(assay = list(counts = as.matrix(spST@expr), logcounts = as.matrix(spST@norm.data)))
-    y = convertTo(sce, type = "edgeR")
-    y = estimateDisp(y, design)
-    return(y)
+    z = estimateDisp(y, design)
+    fit <- glmFit(z)
+    return(fit)
   })
 
   # Intitiate empty lists to save reuslts in
@@ -62,7 +65,7 @@ RunDEspaceST <- function(spST, clusters = "topic", verbose = TRUE, pvalue = 0.05
     res.deg.final <- topTags(res, n = nrow(res$table), adjust.method = "BH", sort.by = "PValue", p.value = pvalue)$table
     #rownames(res.deg) <- rownames(df)
     if (is.null(res.deg.final)) {
-      next
+      return(NULL)
     }
     res.deg.final <- cbind(gene = rownames(res.deg.final), res.deg.final)
     colnames(res.deg.final) <- c("gene", colnames(res.deg.final))
@@ -77,13 +80,13 @@ RunDEspaceST <- function(spST, clusters = "topic", verbose = TRUE, pvalue = 0.05
 #' Volcano plot
 #'
 #' @description create a volcano plot of differentiually expressed genes
-#' @param object spaceST object with differentially expressed genes
-#' @param FDR.cutoff set cutoff threshold for adjusted p-values
-#' @param logFC.cutoff set log2-foldchange cutoff
-#' @param annotate.top.genes specify whether the top genes should be annotated in the plot
-#' @param widget save html widget to file path
+#' @param object An object of class spaceST with differentially expressed genes.
+#' @param cluster Select cluster to compare woith background.
+#' @param FDR.cutoff Set cutoff threshold for adjusted p-values.
+#' @param logFC.cutoff Set log2-foldchange cutoff.
+#' @param annotate.top.genes Specify whether the top genes should be annotated in the plot.
+#' @param widget.out Save html widget to file path.
 #' @importFrom plotly plot_ly layout as.widget
-#' @importFrom htmlwidgets saveWidget
 #' @export
 volcano_plot_spaceST <- function(object, cluster, FDR.cutoff = 0.05, logFC.cutoff = 1, annotate.top.genes = NULL, widget.out = NULL) {
   stopifnot(class(object) == "spaceST",
@@ -139,15 +142,18 @@ volcano_plot_spaceST <- function(object, cluster, FDR.cutoff = 0.05, logFC.cutof
 #'
 #' @description Function used to plot heatmaps of DE genes expression
 #' @export
-#' @param object spaceST object with DE results
-#' @param FDR.cutoff cutoff for adjusted p-values
-#' @param logFC.cutoff cutof for logFC
-#' @param log.2 log2 transform data
-#' @param type select data type from spaceST object
-#' @param scale.data logical speficying whether or not values should be scaled
+#' @param object Object of class spaceST with DE results.
+#' @param FDR.cutoff Cutoff for adjusted p-values.
+#' @param logFC.cutoff Cutoff for logFC.
+#' @param log.2 Log2 transform data.
+#' @param type Select data type from spaceST object.
+#' @param include.downregulated Include downregulated genes when selecting gene to visualize in heatmap.
+#' Absolute value will be used for the logFC threshold.
+#' @param scale.data Logical speficying whether or not values should be scaled.
 #' @importFrom gplots heatmap.2
-#' @importFrom dplyr group_by filter
 #' @importFrom magrittr %>%
+#' @importFrom dplyr filter group_by
+#' @importFrom grDevices colorRampPalette
 #' @return Heatmap of DE genes.
 DE_heatmap <- function(object,
                        FDR.cutoff = 0.05,
@@ -168,12 +174,12 @@ DE_heatmap <- function(object,
 
   DE.genes <- do.call(rbind, object@DE.list)
   DE.genes$cluster <- rep(1:length(unique(object@meta.data$clusters)), each = dim(df)[1])
-  DE.genes <- DE.genes %>% group_by(cluster) %>% dplyr::filter(FDR < FDR.cutoff)
+  DE.genes <- DE.genes %>% group_by(cluster) %>% filter(FDR < FDR.cutoff)
 
   if (include.downregulated) {
-    DE.genes <- DE.genes %>% dplyr::filter(abs(logFC) > logFC.cutoff)
+    DE.genes <- DE.genes %>% filter(abs(logFC) > logFC.cutoff)
   } else {
-    DE.genes <- DE.genes %>% dplyr::filter(logFC > logFC.cutoff)
+    DE.genes <- DE.genes %>% filter(logFC > logFC.cutoff)
   }
   df <- df[as.character(DE.genes$gene), ]
   if (log.2) {
@@ -237,9 +243,12 @@ DE_heatmap <- function(object,
 #' @param x spaceST object
 #' @param quantile.cutoff set cutoff level
 #' @param method method used for linear regression
-#' @importFrom trendsceek calc_varstats genefilter_exprmat
+#' @param min.ncells.expr An integer specifying the minimum number of cells a gene needs
+#' to be expressed in with an expression level above 'min.expr'.
+#' @param min.expr A numeric specifying the minimum expression required in a cell.
+#' @importFrom trendsceek genefilter_exprmat calc_varstats
 #' @export
-var.genes <- function(
+var_genes <- function(
   x,
   quantile.cutoff = 0.9,
   method = 'glm',

@@ -20,8 +20,9 @@ ST_statistics <- function(df){
 #' @param bins Select number of bins.
 #' @param ... Parameters passed to geom_histogram.
 #' @importFrom ggplot2 ggplot aes_string geom_histogram facet_grid
+#' @importFrom graphics plot
 #' @return Plot of histograms.
-ST_statistics_plot <- function(df, separate = F, bins = NULL, ...){
+ST_statistics_plot <- function(df, separate = F, bins = NULL, col2 = c(scales::muted("red"), scales::muted("blue")), ...){
   if (!is.null(bins)) {
     ranges <- apply(df[, 1:2], 2, range)
     binwidths <- round(c(ranges[2, 1] - ranges[1, 1], ranges[2, 2] - ranges[1, 2])/bins)
@@ -33,10 +34,13 @@ ST_statistics_plot <- function(df, separate = F, bins = NULL, ...){
       bw <- NULL
     }
     p <- ggplot(df, aes_string(type)) +
-      geom_histogram(color = "black", fill = ifelse(type == "unique.genes.per.feature", scales::muted("red"), scales::muted("blue")), binwidth = bw, ...)
+      geom_histogram(color = "black", fill = ifelse(type == "unique.genes.per.feature", col2[1], col2[2]), binwidth = bw, ...)
     if (separate) {
       p <- p + facet_grid(~samples)
     }
+    p <- p + theme_linedraw() +
+      theme(axis.text.x = element_text(angle = 90)) +
+      labs(x = gsub(pattern = "\\.", x = type, replacement = " "))
     return(p)
   })
   plot(cowplot::plot_grid(plotlist = p.list, nrow = 2))
@@ -49,7 +53,7 @@ ST_statistics_plot <- function(df, separate = F, bins = NULL, ...){
 #' @export
 #' @rdname coordinates
 #' @param x List of expression data.frames, data.frame or matrix.
-#' @param rep Get replicate column
+#' @param delimiter Specify character used to delimit coordinates in headers.
 #' @return Data frame with replicate numbers, x and y coordinates
 get_coordinates <- function(x, delimiter = "_") {
   UseMethod("get_coordinates")
@@ -85,54 +89,69 @@ get_coordinates.dgCMatrix <- function(x, delimiter = "_"){
 #' subsequently filtered from features with few unique genes and genes with low expression counts.
 #' @export
 #' @rdname merge
-#' @param x List of exrpression data frames, data.frame or matrix.
+#' @param ls List of expression data.frames, data.frame or matrix.
 #' @param unique.genes Integer value specifying number of unique genes allowed in a feature.
 #' @param min.exp Integer value specifying lowest expression value allowed in min.features number of features.
 #' @param min.features Integer value specifying number of features allowed with min.exp count.
 #' @param filter.genes Character vector specifying genes that should be filtered out.
 #' @param delimiter Delimiter used in header.
+#' @importFrom pbmcapply pbmclapply
 #' @return Merged and filtered dataframe.
-merge_exp_list <- function(x,
-                  unique.genes = 0,
-                  min.exp = 0,
-                  min.features = 0,
-                  filter.genes = NULL,
-                  delimiter = "_"){
-  if (class(x) == "list") {
-    stopifnot(length(x) > 1)
-    df.A <- as.matrix(x[[1]])
-
-    # Check headers
-    coords <- do.call(rbind, strsplit(colnames(df.A), split = delimiter))
-    if (dim(coords)[2] == 2) {
-      xy <- paste(1, colnames(df.A), sep = delimiter)
-    } else if (dim(coords)[2] == 3) {
-      xy <- colnames(df.A)
+merge_exp_list <- function(
+  ls,
+  mc.cores = NULL,
+  unique.genes = 0,
+  min.exp = 0,
+  min.features = 0,
+  filter.genes = NULL,
+  delimiter = "_"
+) {
+  if (class(ls) == "list") {
+    if (is.null(mc.cores)) {
+      mc.cores <- parallel::detectCores() - 1
     }
+    genes <- unique(unlist(lapply(ls, rownames)))
+    coords <- do.call(rbind, lapply(ls, function(x) {
+      do.call(rbind, strsplit(colnames(x), split = delimiter))
+    }))
+    if (dim(coords)[2] == 3) {
+      cols <- unlist(lapply(ls, colnames))
+    } else if (dim(coords)[2] == 2) {
+      cols <- unlist(lapply(1:length(ls), function(i) {
+        expr <- ls[[i]]
+        paste(i, colnames(expr), sep = delimiter)
+      }))
+    } else {
+      stop("Headers not valid. Check that the delimiter was set correctly.")
+    }
+    #cols <- unlist(lapply(ls, colnames))
+    m <- do.call(rbind, pbmclapply(1:length(genes), mc.preschedule = TRUE, mc.cores = mc.cores, function(i) {
+      unlist(lapply(ls, function(x) {
+        y <- try(x[genes[i], ], silent = TRUE)
+        if (class(y) == "try-error") {
+          return(rep(NA, ncol(x)))
+        } else {
+          return(y)
+        }
+      }))
+    }))
+    rownames(m) <- genes
+    colnames(m) <- cols
+    m[is.na(m)] <- 0
+    all.samples.matrix <- as(m, "dgCMatrix")
+  } else if (class(ls) %in% c("matrix", "data.frame")) {
+    coords <- do.call(rbind, strsplit(colnames(ls), split = delimiter))
+    if (dim(coords)[2] == 3) {
+      all.samples.matrix <- as(as.matrix(ls), "dgCMatrix")
+    }
+  }
 
-    for (i in 2:length(x)){
-      df.B <- as.matrix(x[[i]])
-      coords <- do.call(rbind, strsplit(colnames(df.B), split = delimiter))
-      if (dim(coords)[2] == 2) {
-        xy <- c(xy, paste(i, colnames(df.B), sep = delimiter))
-      } else if (dim(coords)[2] == 3) {
-        xy <- c(xy, colnames(df.B))
+  if (!is.null(filter.genes)) {
+        removed.genes <- -grep(rownames(all.samples.matrix), pattern = filter.genes, perl = TRUE)
+        if(length(removed.genes) > 0) {
+          all.samples.matrix = all.samples.matrix[-grep(rownames(all.samples.matrix), pattern = filter.genes, perl = TRUE),]
+        }
       }
-      df.A <- data.frame(merge(df.A, df.B, by = "row.names", all = TRUE), row.names = 1)
-    }
-    df.A[is.na(df.A)] <- 0
-    colnames(df.A) <- xy
-    all.samples.matrix <- as(as.matrix(df.A), "dgCMatrix")
-  } else {
-    all.samples.matrix <- as(as.matrix(x), "dgCMatrix")
-  }
-
-  if (!is.null(filter.genes)){
-    removed.genes <- -grep(rownames(all.samples.matrix), pattern = filter.genes, perl = TRUE)
-    if(length(removed.genes) > 0) {
-      all.samples.matrix = all.samples.matrix[-grep(rownames(all.samples.matrix), pattern = filter.genes, perl = TRUE),]
-    }
-  }
 
   # Filter out low quality genes
   all.samples.matrix = all.samples.matrix[Matrix::rowSums(all.samples.matrix >= min.exp) >= min.features, ]
@@ -142,8 +161,61 @@ merge_exp_list <- function(x,
   if (length(indices) > 0){
     all.samples.matrix <- all.samples.matrix[, -indices]
   }
+  all.samples.matrix <- all.samples.matrix[order(rownames(all.samples.matrix)), ]
   return(all.samples.matrix)
 }
+#merge_exp_list <- function(x,
+#                  unique.genes = 0,
+#                  min.exp = 0,
+#                  min.features = 0,
+#                  filter.genes = NULL,
+#                  delimiter = "_"){
+#  if (class(x) == "list") {
+#    stopifnot(length(x) > 1)
+#    df.A <- as.matrix(x[[1]])
+#
+#    # Check headers
+#    coords <- do.call(rbind, strsplit(colnames(df.A), split = delimiter))
+#    if (dim(coords)[2] == 2) {
+#      xy <- paste(1, colnames(df.A), sep = delimiter)
+#    } else if (dim(coords)[2] == 3) {
+#      xy <- colnames(df.A)
+#    }
+#
+#    for (i in 2:length(x)){
+#      df.B <- as.matrix(x[[i]])
+#      coords <- do.call(rbind, strsplit(colnames(df.B), split = delimiter))
+#      if (dim(coords)[2] == 2) {
+#        xy <- c(xy, paste(i, colnames(df.B), sep = delimiter))
+#      } else if (dim(coords)[2] == 3) {
+#        xy <- c(xy, colnames(df.B))
+#      }
+#      df.A <- data.frame(merge(df.A, df.B, by = "row.names", all = TRUE), row.names = 1)
+#    }
+#    df.A[is.na(df.A)] <- 0
+#    colnames(df.A) <- xy
+#    all.samples.matrix <- as(as.matrix(df.A), "dgCMatrix")
+#  } else {
+#    all.samples.matrix <- as(as.matrix(x), "dgCMatrix")
+#  }
+#
+#  if (!is.null(filter.genes)){
+#    removed.genes <- -grep(rownames(all.samples.matrix), pattern = filter.genes, perl = TRUE)
+#    if(length(removed.genes) > 0) {
+#      all.samples.matrix = all.samples.matrix[-grep(rownames(all.samples.matrix), pattern = filter.genes, perl = TRUE),]
+#    }
+#  }
+#
+#  # Filter out low quality genes
+#  all.samples.matrix = all.samples.matrix[Matrix::rowSums(all.samples.matrix >= min.exp) >= min.features, ]
+#
+#  # Filter out low quality spots
+#  indices <- which(apply(all.samples.matrix, 2, function(x) sum(x > 0)) < unique.genes)
+#  if (length(indices) > 0){
+#    all.samples.matrix <- all.samples.matrix[, -indices]
+#  }
+#  return(all.samples.matrix)
+#}
 
 #' Collect data from bioMmRt
 #'
@@ -175,19 +247,19 @@ collect_gene_data <- function(gene.list, organism = "hsapiens", filters = "ensem
 #'
 #' @description Function used to convert ENSEMBL gene ids of an expression matrix into HGNC/MGI symbols.
 #' Duplicated gene names will be aggregated.
-#' @export
-#' @rdname convert
-#' @param df Data.frame or matrix with ENSEMBL ids as rownames.
+#' @param object Data.frame, matrix or spaceST object with ENSEMBL ids as rownames.
 #' @param organism Select organism database (human, mouse)
 #' @return Data.frame or matrix with converted names.
 #' @importFrom biomaRt getBM useDataset useMart
-ensembl2hgnc <- function(df, organism = "human") {
+#' @name convert
+#' @export
+ensembl2hgnc <- function(object, organism = "human") {
   UseMethod("ensembl2hgnc")
 }
 
 #' @rdname convert
 #' @export
-ensembl2hgnc.default <- function(df, organism = "human") {
+ensembl2hgnc.default <- function(object, organism = "human") {
   mart <- character()
   class(mart) <- "try-error"
   trials <- 0
@@ -199,7 +271,7 @@ ensembl2hgnc.default <- function(df, organism = "human") {
         stop("Failed to connect to BiomaRt")
       }
     }
-    G_list <- getBM(filters= "ensembl_gene_id_version", attributes = c("ensembl_gene_id_version", "hgnc_symbol"), values = rownames(df), mart = mart)
+    G_list <- getBM(filters= "ensembl_gene_id_version", attributes = c("ensembl_gene_id_version", "hgnc_symbol"), values = rownames(object), mart = mart)
     if (nrow(G_list) == 0) {
       stop("No matches found. Check if the corect organism was selected.")
     }
@@ -212,7 +284,7 @@ ensembl2hgnc.default <- function(df, organism = "human") {
         stop("Failed to connect to BiomaRt")
       }
     }
-    G_list <- getBM(filters= "ensembl_gene_id_version", attributes = c("ensembl_gene_id_version", "mgi_symbol"), values = rownames(df), mart = mart)
+    G_list <- getBM(filters= "ensembl_gene_id_version", attributes = c("ensembl_gene_id_version", "mgi_symbol"), values = rownames(object), mart = mart)
     if (nrow(G_list) == 0) {
       stop("No matches found. Check if the corect organism was selected.")
     }
@@ -222,32 +294,34 @@ ensembl2hgnc.default <- function(df, organism = "human") {
   G_vec <- G_list[, 2]
   names(G_vec) <- G_list[, 1]
   df <- as.matrix(df)
-  rownames(df)[!is.na(G_vec[rownames(df)])] <- G_vec[rownames(df)[!is.na(G_vec[rownames(df)])]]
-  if (sum(duplicated(rownames(df))) > 0) {
-    df <- rowsum(df, rownames(df))
+  rownames(object)[!is.na(G_vec[rownames(df)])] <- G_vec[rownames(object)[!is.na(G_vec[rownames(object)])]]
+  if (sum(duplicated(rownames(object))) > 0) {
+    object <- rowsum(object, rownames(object))
   }
-  return(as.data.frame(df))
+  return(as.data.frame(object))
 }
 
 #' @rdname convert
 #' @export
-ensembl2hgnc.list <- function(df, organism = "human") {
+ensembl2hgnc.list <- function(object, organism = "human") {
   exp.list <- list()
-  for (i in 1:length(df)) {
-    exp.list[[i]] <- ensembl2hgnc.default(df[[i]], organism = organism)
+  for (i in 1:length(object)) {
+    exp.list[[i]] <- ensembl2hgnc.default(object[[i]], organism = organism)
   }
   return(exp.list)
 }
 
 #' @rdname convert
 #' @export
-ensembl2hgnc.spaceST <- function(spST) {
-  spST@expr <- as(as.matrix(ensembl2hgnc.default(spST@expr)), "dgCMatrix")
-  return(spST)
+ensembl2hgnc.spaceST <- function(object, organism = "human") {
+  object@expr <- as(as.matrix(ensembl2hgnc.default(object@expr)), "dgCMatrix")
+  return(object)
 }
+
 
 #' Calculate cp10k
 #'
+#' @param df Object of class matrix or data.frame.
 calc_cp10k <- function(df) {
   norm.factors <- colSums(df)
   norm.data <- t(t(df)/norm.factors*1e4)

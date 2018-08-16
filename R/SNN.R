@@ -14,7 +14,7 @@
 #' prune everything).
 #' @param print.output Whether or not to print output to the console
 #' @param cluster.method Chose method to use for clustering. "topic" will run
-#' topic_clusters() and cluster features based on topic porportion using hierarchical
+#' clusterST() and cluster features based on topic porportion using hierarchical
 #' clustering with euclidean distances and ward.D2. Clusters are chosen using the
 #' unsupervised cutreeDynamic function from dynamicTreeCut package. "SNN" will run
 #' a network graph based algorithm using methods from the Seurat package.
@@ -45,7 +45,7 @@ BuildTopicSNN <- function(
   seed = 0,
   cluster.method = "SNN",
   perplexity = 15,
-  color.by.sample,
+  color.by.sample = T,
   tsne = NULL,
   layout = NULL,
   algorithm = 1,
@@ -98,15 +98,14 @@ BuildTopicSNN <- function(
       }
       if (is.null(clusters)) {
         if (cluster.method == "topic") {
-          clusters <- topic_clusters(
-            omega = data.use
+          clusters <- clusterST(
+            object = object
           )
         } else if (cluster.method == "SNN") {
           clusters <- RunModularityClusteringspaceST(
             SNN = w,
             print.output = print.output,
-            set.algorithm = algorithm,
-            ...
+            set.algorithm = algorithm
           )
           object@meta.data$clusters.snn <- clusters
         }
@@ -140,12 +139,12 @@ BuildTopicSNN <- function(
 #'
 #' @param SNN SNN              matrix to use as input for the clustering
 #'                             algorithms
-#' @param modularity           Modularity function to use in clustering (1 =
+#' @param set.modularity       Modularity function to use in clustering (1 =
 #'                             standard; 2 = alternative).
-#' @param resolution           Value of the resolution parameter, use a value
+#' @param set.resolution       Value of the resolution parameter, use a value
 #'                             above (below) 1.0 if you want to obtain a larger
 #'                             (smaller) number of communities.
-#' @param algorithm            Algorithm for modularity optimization (1 =
+#' @param set.algorithm        Algorithm for modularity optimization (1 =
 #'                             original Louvain algorithm; 2 = Louvain algorithm
 #'                             with multilevel refinement; 3 = SLM algorithm)
 #' @param n.start              Number of random starts.
@@ -263,7 +262,7 @@ SetIfNull <- function (x, default)
 #' @param nn.ranked     Subset of full KNN graph that only contains the first
 #'                      k.param nearest neighbors. Used to define Jaccard
 #'                      distances between any two cells
-#' @param prune.snn     Sets the cutoff for acceptable Jaccard distances when
+#' @param prune.SNN     Sets the cutoff for acceptable Jaccard distances when
 #'                      computing the neighborhood overlap for the SNN
 #'                      construction. Any edges with values less than or equal to
 #'                      this will be set to 0 and removed from the SNN graph.
@@ -274,9 +273,14 @@ SetIfNull <- function (x, default)
 #'                      graph
 #'
 #' @importFrom utils txtProgressBar setTxtProgressBar
-CalcSNNSparse <- function (cell.names, k.param, nn.large, nn.ranked, prune.SNN,
-          print.output)
-{
+CalcSNNSparse <- function(
+  cell.names,
+  k.param,
+  nn.large,
+  nn.ranked,
+  prune.SNN,
+  print.output
+){
   n.cells <- length(cell.names)
   counter <- 1
   idx1 <- vector(mode = "integer", length = n.cells^2/k.param)

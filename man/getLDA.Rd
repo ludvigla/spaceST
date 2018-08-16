@@ -6,6 +6,9 @@
 \usage{
 getLDA(object)
 }
+\arguments{
+\item{object}{Object of class spaceST.}
+}
 \description{
 Method topic.clusters.
 }

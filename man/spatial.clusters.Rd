@@ -4,11 +4,14 @@
 \alias{spatial.clusters}
 \title{Visualize spatial distribution of clusters.}
 \usage{
-spatial.clusters(object, clusters = NULL, HE.list = NULL, arrange = T,
-  ncols = NULL, xlim = c(1, 33), ylim = c(1, 35), cols = NULL, ...)
+spatial.clusters(object, clusters = NULL, HE.list = NULL,
+  arrange = T, ncols = NULL, xlim = c(1, 33), ylim = c(1, 35),
+  cols = NULL, ...)
 }
 \arguments{
 \item{object}{Object of class spaceST.}
+
+\item{clusters}{Integer/numeric vector specifying clusters.}
 
 \item{HE.list}{List of paths to HE images in jpeg format that should be used as a background for the
 spatial heatmap.}
@@ -23,8 +26,6 @@ spatial heatmap.}
 specific colors for each cluster by naming the character vector with the cluster ids.}
 
 \item{...}{additional parameters passed to geom_point(), defining the attributes of the feature coordinate points.}
-
-\item{Clusters}{Integer/numeric vector specifying clusters.}
 }
 \value{
 Plot of clustered featured overlayed on black and white HE image.

@@ -6,8 +6,8 @@
 \usage{
 BuildTopicSNN(object, k.param = 30, k.scale = 25, plot.SNN = FALSE,
   prune.SNN = 1/15, print.output = TRUE, clusters = NULL, seed = 0,
-  cluster.method = "SNN", perplexity = 15, color.by.sample, tsne = NULL,
-  layout = NULL, algorithm = 1, ...)
+  cluster.method = "SNN", perplexity = 15, color.by.sample = T,
+  tsne = NULL, layout = NULL, algorithm = 1, ...)
 }
 \arguments{
 \item{object}{Topic matrix obtained with compute.lda() from cellTree package}
@@ -31,7 +31,7 @@ prune everything).}
 \item{seed}{Set random seed for t-SNE algorithm}
 
 \item{cluster.method}{Chose method to use for clustering. "topic" will run
-topic_clusters() and cluster features based on topic porportion using hierarchical
+clusterST() and cluster features based on topic porportion using hierarchical
 clustering with euclidean distances and ward.D2. Clusters are chosen using the
 unsupervised cutreeDynamic function from dynamicTreeCut package. "SNN" will run
 a network graph based algorithm using methods from the Seurat package.}

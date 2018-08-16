@@ -1,18 +1,22 @@
 #' spaceST network graphs
 #'
 #' @description Visualize SNN networks for spatial data
-#' @param subset_by Select attribute to subset igraph by, default NULL (options: "clusters", "replicate")
-#' @param color_by Select attribute to color vertices by (options: "clusters", "replicate", "clust_and_rep)
+#' @param object Object of class spaceST.
+#' @param subset_by Select attribute to subset igraph by, default NULL (options: "clusters", "replicate").
+#' @param color_by Select attribute to color vertices by (options: "clusters", "replicate", "clust_and_rep).
 #' @param mode Select mode for network object, default NULL (options: "spatial", "circle", "kamadakawai", ...
-#' For more options, see available placement algorithms in the sna package)
-#' @param select.rep.group Select replicate by replicate ID
-#' @param select.clust.group Select cluster by cluster number
-#' @param vertex.size Size of nodes/vertices
-#' @param edge.color Color edges of network
-#' @param edge.size Select size for edges in network
+#' For more options, see available placement algorithms in the sna package).
+#' @param select.rep.group Select replicate by replicate ID.
+#' @param select.clust.group Select cluster by cluster number.
+#' @param vertex.size Size of nodes/vertices.
+#' @param edge.color Color edges of network.
+#' @param edge.size Select size for edges in network.
+#' @param clusters.snn Cluster data using network based approach.
+#' @param cols character; Specify colors of grouping variables.
 #' @param ... Parameters passed to ggnet2
 #' @importFrom ggnet ggnet2
-#' @importFrom igraph graph.adjacency E induced_subgraph
+#' @importFrom igraph graph.adjacency E induced_subgraph V V<-
+#' @importFrom graphics plot
 #' @export
 SpatialNetwork <- function(
   object,
@@ -25,6 +29,7 @@ SpatialNetwork <- function(
   edge.color = "black",
   edge.size = 0.1,
   clusters.snn = F,
+  cols = NULL,
   ...
 ) {
   if (is.null(object@snn)) {
@@ -42,9 +47,9 @@ SpatialNetwork <- function(
     diag = FALSE
   )
   if (clusters.snn) {
-    igraph::V(net)$clusters <- object@meta.data$clusters.snn
+    V(net)$clusters <- object@meta.data$clusters.snn
   } else {
-    igraph::V(net)$clusters <- object@meta.data$clusters
+    V(net)$clusters <- object@meta.data$clusters
   }
   V(net)$replicates <- as.numeric(object@coordinates$replicate)
   V(net)$x <- object@coordinates$x
@@ -87,12 +92,11 @@ SpatialNetwork <- function(
   } else {
     col <- color_by
   }
-  cols <- c("royalblue3", "mediumpurple4", "navajowhite2", "chocolate", "firebrick", "yellow2","aquamarine", "orange1", "olivedrab2", "darkgreen", "pink", "navy", "khaki3", "lightsteelblue1")
-  if (length(unique(col)) > 14) {
-    cols = c("#771155", "#AA4488", "#CC99BB", "#114477", "#4477AA", "#77AADD", "#117777", "#44AAAA", "#77CCCC", "#117744", "#44AA77", "#88CCAA", "#777711", "#AAAA44", "#DDDD77", "#774411", "#AA7744", "#DDAA77", "#771122", "#AA4455", "#DD7788")
+  if (is.null(cols)) {
+    cols <- c("royalblue3", "mediumpurple4", "navajowhite2", "chocolate", "firebrick", "yellow2"," aquamarine", "orange1", "olivedrab2", "darkgreen", "pink", "black", "navy", "khaki3", "lightsteelblue1")
   }
   col <- cols[col]
-  pnet <- ggnet2(net,
+  pnet <- ggnet2(asNetwork(net),
          mode = net.layout,
          color = col,
          size = vertex.size,

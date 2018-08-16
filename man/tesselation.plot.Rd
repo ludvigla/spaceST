@@ -4,22 +4,22 @@
 \alias{tesselation.plot}
 \title{Voronoi tesselation plot}
 \usage{
-tesselation.plot(r, datapolyM = NULL, outline.color = NA, bg = "black",
-  xlim = c(0, 34), ylim = c(0, 36), alpha = 1)
+tesselation.plot(r, datapolyM = NULL, outline.color = NA,
+  bg = "black", xlim = c(0, 34), ylim = c(0, 36), alpha = 1)
 }
 \arguments{
-\item{r}{data.frame with grouped x, y values used with geom_polygon}
+\item{r}{Data.frame with grouped x, y values used with geom_polygon.}
 
-\item{datapolyM}{convex hull polygon used to mask area outside tissue}
+\item{datapolyM}{Convex hull polygon used to mask area outside tissue.}
 
-\item{outline.color}{set color of polygon outline}
+\item{outline.color}{Set color of polygon outline.}
 
-\item{bg}{background color}
+\item{bg}{Background color.}
 
-\item{xlim}{set limits of x axis}
+\item{xlim, ylim}{Set limits of x and y axes.}
 
-\item{ylim}{set limits of y axis}
+\item{alpha}{Set transparency of polygons.}
 }
 \description{
-Compute voronoi tesselation and visualize ST data as a colored mosaic
+Compute voronoi tesselation and visualize ST data as a colored mosaic.
 }

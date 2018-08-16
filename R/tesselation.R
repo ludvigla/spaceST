@@ -1,12 +1,12 @@
 #' Voronoi tesselation plot
 #'
-#' @description Compute voronoi tesselation and visualize ST data as a colored mosaic
-#' @param r data.frame with grouped x, y values used with geom_polygon
-#' @param datapolyM convex hull polygon used to mask area outside tissue
-#' @param outline.color set color of polygon outline
-#' @param bg background color
-#' @param xlim set limits of x axis
-#' @param ylim set limits of y axis
+#' @description Compute voronoi tesselation and visualize ST data as a colored mosaic.
+#' @param r Data.frame with grouped x, y values used with geom_polygon.
+#' @param datapolyM Convex hull polygon used to mask area outside tissue.
+#' @param outline.color Set color of polygon outline.
+#' @param bg Background color.
+#' @param xlim,ylim Set limits of x and y axes.
+#' @param alpha Set transparency of polygons.
 #' @importFrom ggplot2 ggplot geom_polygon scale_x_continuous scale_y_continuous aes theme_void theme element_rect margin
 tesselation.plot <- function(
   r,
@@ -65,11 +65,18 @@ tiles2polygon <- function(tiles, v, xlim, ylim) {
 #' @param outline.color Set polygon outline color [default = NA].
 #' @param bg Select background color [default = "black"].
 #' @param inv.col Invert colors [default = FALSE].
+#' @param alpha Set alpha of polygons [default = 1].
+#' @param scatter Provide list of data.frames with coordinates to overlay tesselated surface. Colnames
+#' have to be c("x", "y") [default = NULL].
 #' @param return.list Return list of plots instead of combining them into a grid [default = FALSE].
 #' @param cell.col Color of points (spots or scatter) [default = "cyan"].
 #' @param cell.size Size of points (spots or scatter) [default = 0.01].
 #' @param cell.alpha Color of points (spots or scatter) [default = 0.1].
+#' @param palette Select color palette \link[spaceST]{palette.select}.
+#' @param max.num.cols Select maximum number of columns to plot [default = 20].
+#' @param polygon.mask Logical; Specify whether or not the background should be masked [default = TRUE].
 #' @param fill.empty Fill empty array spots with 0 values.
+#' @param ... Parameters passed to geom_point().
 #' @importFrom deldir deldir tile.list
 #' @importFrom grDevices chull
 #' @importFrom ggplot2 geom_point aes
@@ -95,7 +102,8 @@ tessViz <- function(
   palette = "offwhite.to.black",
   max.num.cols = 20,
   polygon.mask = TRUE,
-  fill.empty = FALSE
+  fill.empty = FALSE,
+  ...
 ) {
   stopifnot(class(object) == "spaceST",
             datatype %in% c("topics", "reducedDims", "t-SNE", "expr"))
@@ -193,9 +201,9 @@ tessViz <- function(
 
       if (add.points) {
         if (!is.null(scatter)) {
-          p <- p + geom_point(data = scatter[[n]], aes(x, y), color = cell.col, size = cell.size, alpha = cell.alpha)
+          p <- p + geom_point(data = scatter[[n]], aes(x, y), color = cell.col, size = cell.size, alpha = cell.alpha, ...)
         } else {
-          p <- p + geom_point(data = coords, aes(x, 36 - y), size = cell.size, color = cell.col, alpha = cell.alpha)
+          p <- p + geom_point(data = coords, aes(x, 36 - y), size = cell.size, color = cell.col, alpha = cell.alpha, ...)
         }
       }
       inside_plot <- p
@@ -223,9 +231,9 @@ tessViz <- function(
 
         if (add.points) {
           if (!is.null(scatter)) {
-            p <- p + geom_point(data = scatter[[n]], aes(x, y), color = cell.col, size = cell.size, alpha = cell.alpha)
+            p <- p + geom_point(data = scatter[[n]], aes(x, y), color = cell.col, size = cell.size, alpha = cell.alpha, ...)
           } else {
-            p <- p + geom_point(data = coords, aes(x, 36 - y), size = cell.size, alpha = cell.alpha)
+            p <- p + geom_point(data = coords, aes(x, 36 - y), size = cell.size, alpha = cell.alpha, ...)
           }
         }
         inside_plot[[i]] <- p
@@ -247,7 +255,7 @@ tessViz <- function(
 
 
 # Scale values
-scale2range <- function(x, a, b){
+scale2range <- function(x, a, b) {
   res <- (b-a)*(x - min(x, na.rm = T))/(max(x, na.rm = T) - min(x, na.rm = T)) + a
   return(res)
 }
@@ -287,18 +295,30 @@ palette.select <- function(palette) {
 #' @param object Object of class spaceST.
 #' @param value Target vector to visualize. This value can be chosen from any slot of the spaceST object
 #' containing data linked to array spots.
-#' @param type Select dataset where the value can be found [options: "expr", "norm.data", "pca"]
+#' @param type Select dataset where the value can be found [options: "expr", "norm.data", "pca", "topics]
 #' @param HE.list List of paths to HE images in jpeg format that should be used as a background for the
 #' spatial heatmap.
 #' @param overlay.spots Set to TRUE if you want to overlay array spots on the smoothed heatmap.
 #' @param set.max.alpha Sets maximum alpha value.
+#' @param palette character; SPecify color palette \link[spaceST]{palette.select}.
 #' @param ... Parameters passed to geom_point() in the array spot layer.
 #' @importFrom grid rasterGrob unit
 #' @importFrom akima interp
-#' @importFrom fields interp.surface.grid
 #' @importFrom ggplot2 geom_raster aes scale_x_continuous scale_y_continuous labs scale_fill_gradientn theme_void annotation_custom guides
+#' @importFrom fields interp.surface.grid
+#' @importFrom viridis cividis viridis
+#' @importFrom RColorBrewer brewer.pal
 #' @export
-smooth.viz <- function(object, value, type = "norm.data", HE.list = NULL, overlay.spots = FALSE, set.max.alpha = 0.7, ...) {
+smooth.viz <- function(
+  object,
+  value,
+  type = "norm.data",
+  HE.list = NULL,
+  overlay.spots = FALSE,
+  set.max.alpha = 0.7,
+  palette = "spectral",
+  ...
+) {
   # Use the 1000L array
   xg = 33
   yg = 35
@@ -354,7 +374,7 @@ smooth.viz <- function(object, value, type = "norm.data", HE.list = NULL, overla
     return(exp.values_zero)
   })
 
-  pal <- palette.select("spectral")
+  pal <- palette.select(palette)
   cols <- rev(rgb(pal(seq(0, 1, length.out = 10)), maxColorValue = 255))
 
   if (!is.null(HE.list)) {
@@ -409,9 +429,9 @@ smooth.viz <- function(object, value, type = "norm.data", HE.list = NULL, overla
     z <- as.vector(t(r$z))
     gg <- data.frame(x, y, val = z)
     gg$val[gg$val == 0] <- NA
-    gg$a <- scale2range(gg$val, 0, set.max.alpha)
+    #gg$a <- scale2range(gg$val, 0, set.max.alpha)
 
-    p <- ggplot(na.omit(gg), aes(x, 36 - y, fill = val, alpha = a))
+    p <- ggplot(na.omit(gg), aes(x, 36 - y, fill = val, alpha = set.max.alpha))
     if (!is.null(grobs.list)) {
       p <- p + annotation_custom(grobs.list[[i]], -Inf, Inf, -Inf, Inf)
     }
@@ -424,10 +444,11 @@ smooth.viz <- function(object, value, type = "norm.data", HE.list = NULL, overla
       labs(fill = value) +
       guides(alpha = FALSE)
     if (overlay.spots) {
-      p <- p + geom_point(data = spots.list[[i]], aes(x, 36 - scale2range(y, min(y) - 1, max(y) + 1), color = val), ...) +
+      p <- p + geom_point(data = spots.list[[i]], aes(x, 36 - scale2range(y, min(y) - 1, max(y) + 1), color = val, ...)) +
         scale_color_gradientn(colours = cols) +
         guides(color = FALSE)
     }
+    return(p)
   })
   cowplot::plot_grid(plotlist = p.list)
 }

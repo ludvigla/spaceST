@@ -1,9 +1,9 @@
 #' Helper function to compute lda using cellTree package.
 #'
 #' This helper function is used to compute topics for an expression dataset using lda modelling from cellTree package.
+#' @name LDA
 #' @param object Object of class spaceST.
-#' @param min.topics,max.topics Integer values specifying min and max number of topics in the "maptpx" model.
-#' @param max.topic Maximum number of topics.
+#' @param min.topic,max.topic Integer values specifying min and max number of topics in the "maptpx" model.
 #' @param num.genes Number of genes to use for lda modelling.
 #' @param datatype Character string specifying if the "expr" or "norm.data" ata should be used as input. Default
 #' is set to "norm.data".
@@ -29,12 +29,14 @@ topic_compute <- function(
 ) {
   UseMethod("topic_compute")
 }
+#' @rdname LDA
 #' @export
 topic_compute.default <- function(
   object,
   min.topic = 2,
   max.topic = 15,
   num.genes = NULL,
+  datatype = "norm.data",
   method = "maptpx",
   sd.filter = F,
   log.scale = F,
@@ -58,6 +60,7 @@ topic_compute.default <- function(
                             log.scale = log.scale)
   return(lda.results)
 }
+#' @rdname LDA
 #' @export
 topic_compute.spaceST <- function(
   object,
@@ -80,12 +83,12 @@ topic_compute.spaceST <- function(
     stop("LDA method has already been computed for this object. Set force.calc = TRUE if you want to overwrite the results")
   }
   if (datatype == "norm.data") {
-    df <- as.matrix(object@norm.data)
+    d <- as.matrix(object@norm.data)
   } else if (datatype == "expr") {
-    df <- as.matrix(object@expr)
+    d <- as.matrix(object@expr)
   }
   lda.results <- topic_compute.default(
-    df,
+    d,
     min.topic = 2,
     max.topic = 15,
     num.genes = NULL,
@@ -94,7 +97,7 @@ topic_compute.spaceST <- function(
     log.scale = F
   )
   object@lda.results <- lda.results
-  object@meta.data$clusters <- clusterST(omega = lda.results$omega, minClusterSize = minClusterSize)
+  object <- clusterST(object = object, minClusterSize = minClusterSize)
   object@meta.data$minClusterSize <- minClusterSize
   return(object)
 }
@@ -107,20 +110,32 @@ topic_compute.spaceST <- function(
 #' @param method.dist Set distance method.
 #' @param method.tree Set clustering method.
 #' @param minClusterSize Integer value specifying the minimum cluster size allowed.
+#' @param custom.matrix Provide a matrix to perform hierarchical clustering on.
+#' @importFrom dynamicTreeCut cutreeDynamic
 #' @return Integer vector specifying cluster identity of each feature.
 #' @export
 clusterST <- function(
-  object,
+  object = NULL,
   method.dist = "euclidean",
   method.tree = "ward.D2",
-  minClusterSize = 30
-  ){
-  omega <- object@lda.results$omega
-  my.dist = dist(omega, method = method.dist)
-  my.tree = hclust(my.dist, method = method.tree)
-  clusters = unname(dynamicTreeCut::cutreeDynamic(my.tree, distM = as.matrix(my.dist), verbose = 0, minClusterSize = minClusterSize))
-  object@meta.data$clusters <- clusters
-  return(object)
+  minClusterSize = 30,
+  custom.matrix = NULL
+){
+  stopifnot(!is.null(object) | !is.null(custom.matrix))
+  if (!is.null(custom.matrix)) {
+    omega <- custom.matrix
+    my.dist = dist(omega, method = method.dist)
+    my.tree = hclust(my.dist, method = method.tree)
+    clusters = unname(cutreeDynamic(my.tree, distM = as.matrix(my.dist), verbose = 0, minClusterSize = minClusterSize))
+    return(clusters)
+  } else {
+    omega <- object@lda.results$omega
+    my.dist = dist(omega, method = method.dist)
+    my.tree = hclust(my.dist, method = method.tree)
+    clusters = unname(cutreeDynamic(my.tree, distM = as.matrix(my.dist), verbose = 0, minClusterSize = minClusterSize))
+    object@meta.data$clusters <- clusters
+    return(object)
+  }
 }
 
 
@@ -132,6 +147,8 @@ clusterST <- function(
 #' @param method.tree Set clustering method.
 #' @param minClusterSize Minimum cluster size.
 #' @param cols Set cluster colors.
+#' @importFrom grDevices colorRampPalette
+#' @importFrom stats hclust dist
 #' @return Heatmap of topic results.
 #' @export
 topic_heatmap <- function(object, method.dist = "euclidean", method.tree = "ward.D2", minClusterSize = 30, cols = NULL){
@@ -175,7 +192,6 @@ topic_heatmap <- function(object, method.dist = "euclidean", method.tree = "ward
 #' This function is used to pool clustered features by adding the gene expression values within each cluster.
 #' @param object Expression data.frame, matrix or object of class spaceST.
 #' @param clusters Integer vector specifying cluster identity of each feature.
-#' @param CountClust ExtractTopFeatures
 #' @return Integer vector specifying cluster identity of each feature.
 #' @export
 cluster_matrix <- function(object, clusters) {
@@ -201,13 +217,24 @@ cluster_matrix.spaceST <- function(object, clusters){
 #' Extract top features
 #'
 #' @param object Object of class spaceST.
+#' @param top.features The top features in each cluster k that are selected based on the feature's ability
+#' to distinguish cluster k from cluster 1, …, K for all cluster k < l. Default: 1000.
+#' @param method The underlying model assumed for KL divergence measurement. Two choices considered are
+#' "bernoulli" and "poisson". Default: poisson.
+#' @param option if "min", for each cluster k, we select features that maximize the minimum KL divergence
+#' of cluster k against all other clusters for each feature. If "max", we select features that maximize
+#' the maximum KL divergence of cluster k against all other clusters for each feature.
+#' @param shared if TRUE, then we report genes that can be highly expressed in more than one cluster.
+#' Else, we stick to only those genes that are highest expressed only in a specific cluster.
 #' @seealso \link[CountClust]{ExtractTopFeatures}
 #' @export
-ExtractTopFeaturesST <- function(object,
-                                       top_features = 1000,
-                                       method = "poisson",
-                                       options = "min",
-                                       shared = FALSE) {
+ExtractTopFeaturesST <- function(
+  object,
+  top_features = 1000,
+  method = "poisson",
+  options = "min",
+  shared = FALSE
+ ) {
   theta <- object@lda.results$theta
   top.features <- CountClust::ExtractTopFeatures(theta,
                                      top_features = top_features,
