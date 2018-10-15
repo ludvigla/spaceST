@@ -23,7 +23,7 @@ CreatespaceSTobject <- function(
   delimiter = "_"
   ) {
   spaceST.version <- packageVersion("spaceST")
-  if (!(class(raw.data) %in% c("list", "data.frame", "matrix"))) {
+  if (!(class(raw.data) %in% c("list", "data.frame", "matrix", "dgCMatrix"))) {
     return("Wrong input format")
   }
   object <- new(

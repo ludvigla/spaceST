@@ -133,8 +133,12 @@ spatial.heatmap <- function(
     } else {
       p <- p + geom_point(size = size, ...) +
         theme_void() +
-        labs(color = ifelse(!is.null(col.title), col.title, value)) +
-        scale_color_gradientn(colours = cols, limits = c(min.col, max.col))
+        labs(color = ifelse(!is.null(col.title), col.title, value))
+        if (scale == "colwise") {
+          p <- p + scale_color_gradientn(colours = cols)
+        } else {
+          p <- p +scale_color_gradientn(colours = cols, limits = c(min.col, max.col))
+        }
     }
     if (hide.legend) {
       p <- p + guides(color = FALSE)

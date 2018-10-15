@@ -95,11 +95,9 @@ get_coordinates.dgCMatrix <- function(x, delimiter = "_"){
 #' @param min.features Integer value specifying number of features allowed with min.exp count.
 #' @param filter.genes Character vector specifying genes that should be filtered out.
 #' @param delimiter Delimiter used in header.
-#' @importFrom pbmcapply pbmclapply
 #' @return Merged and filtered dataframe.
 merge_exp_list <- function(
   ls,
-  mc.cores = NULL,
   unique.genes = 0,
   min.exp = 0,
   min.features = 0,
@@ -107,9 +105,6 @@ merge_exp_list <- function(
   delimiter = "_"
 ) {
   if (class(ls) == "list") {
-    if (is.null(mc.cores)) {
-      mc.cores <- parallel::detectCores() - 1
-    }
     genes <- unique(unlist(lapply(ls, rownames)))
     coords <- do.call(rbind, lapply(ls, function(x) {
       do.call(rbind, strsplit(colnames(x), split = delimiter))
@@ -124,26 +119,30 @@ merge_exp_list <- function(
     } else {
       stop("Headers not valid. Check that the delimiter was set correctly.")
     }
-    #cols <- unlist(lapply(ls, colnames))
-    m <- do.call(rbind, pbmclapply(1:length(genes), mc.preschedule = TRUE, mc.cores = mc.cores, function(i) {
-      unlist(lapply(ls, function(x) {
-        y <- try(x[genes[i], ], silent = TRUE)
-        if (class(y) == "try-error") {
-          return(rep(NA, ncol(x)))
-        } else {
-          return(y)
-        }
-      }))
+
+    m <- do.call(cbind, lapply(ls, function(x) {
+      # Check class
+      if (class(x) != "data.frame") {
+        x <- as.data.frame(x)
+      } else if (!class(x) %in% c("matrix", "data.frame")) {
+        stop("Invalid class of expression matrix ...")
+      }
+      x <- x[genes, ]
+      rownames(x) <- genes
+      return(x)
     }))
+
     rownames(m) <- genes
     colnames(m) <- cols
     m[is.na(m)] <- 0
-    all.samples.matrix <- as(m, "dgCMatrix")
+    all.samples.matrix <- as(as.matrix(m), "dgCMatrix")
   } else if (class(ls) %in% c("matrix", "data.frame")) {
     coords <- do.call(rbind, strsplit(colnames(ls), split = delimiter))
     if (dim(coords)[2] == 3) {
       all.samples.matrix <- as(as.matrix(ls), "dgCMatrix")
     }
+  } else if (class(ls) == "dgCMatrix") {
+    all.samples.matrix <- ls
   }
 
   if (!is.null(filter.genes)) {
@@ -164,6 +163,7 @@ merge_exp_list <- function(
   all.samples.matrix <- all.samples.matrix[order(rownames(all.samples.matrix)), ]
   return(all.samples.matrix)
 }
+
 #merge_exp_list <- function(x,
 #                  unique.genes = 0,
 #                  min.exp = 0,
@@ -271,7 +271,7 @@ ensembl2hgnc.default <- function(object, organism = "human") {
         stop("Failed to connect to BiomaRt")
       }
     }
-    G_list <- getBM(filters= "ensembl_gene_id_version", attributes = c("ensembl_gene_id_version", "hgnc_symbol"), values = rownames(object), mart = mart)
+    G_list <- getBM(filters = "ensembl_gene_id_version", attributes = c("ensembl_gene_id_version", "hgnc_symbol"), values = rownames(object), mart = mart)
     if (nrow(G_list) == 0) {
       stop("No matches found. Check if the corect organism was selected.")
     }

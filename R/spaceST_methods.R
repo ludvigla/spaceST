@@ -118,7 +118,7 @@ setMethod(
   f = "NormalizespaceST",
   signature = "spaceST",
   definition = function(object,
-                        method = "cp10k",
+                        method = "scran",
                         log2 = F,
                         pcount = 1,
                         clusters = NULL) {
@@ -130,7 +130,7 @@ setMethod(
       object@norm.data <- log2(calc_cpm(expr.data) + 1)
     } else {
       if (method == "scran") {
-        sce <- SingleCellExperiment(assays = list(counts = expr.data, logcounts = log2(expr.data + pcount)))
+        sce <- SingleCellExperiment::SingleCellExperiment(assays = list(counts = expr.data, logcounts = log2(expr.data + pcount)))
         if (ncol(object@expr) > 700 | !is.null(clusters)) {
           if (!is.null(clusters)) {
             sce <- scran::computeSumFactors(sce, cluster = clusters)
@@ -140,16 +140,16 @@ setMethod(
             sce <- scran::computeSumFactors(sce, cluster = q.clust)
           }
 
-          object@meta.data$size_factor <- sizeFactors(sce)
+          object@meta.data$size_factor <- SingleCellExperiment::sizeFactors(sce)
         } else {
           sce <- computeSumFactors(sce)
-          object@meta.data$size_factor <- sizeFactors(sce)
+          object@meta.data$size_factor <- SingleCellExperiment::sizeFactors(sce)
         }
         if (sum(sizeFactors(sce) == 0) > 0) {
           stop("Zero sum factors not allowed. Filter data before normalization with scran.")
         }
         sce <- scater::normalize(sce)
-        object@norm.data <- as(logcounts(sce), "dgCMatrix")
+        object@norm.data <- as(SingleCellExperiment::logcounts(sce), "dgCMatrix")
       } else if (method == "cp10k") {
         object@norm.data <- as(calc_cp10k(as.matrix(expr.data)), "dgCMatrix")
       }
@@ -310,12 +310,14 @@ setMethod(f = "plot_QC_spaceST", signature = "spaceST", definition = function(ob
 #' @param object Object of class spaceST.
 #' @param ntop Number of variable genes to select for PC analysis.
 #' @param exprs_values Select target object to use as input for PC analysis [options: "norm.data", "expr"]
+#' @param log2.transform Log2-transform data before running pca.
 #' @param ... Parameters passed to \link[stats]{prcomp}.
 #' @seealso \link[stats]{prcomp}
 #' @export
 setGeneric("spPCA", function(object,
                              ntop = 500,
                              exprs_values = "norm.data",
+                             log2.transform = TRUE,
                              ...) standardGeneric("spPCA"))
 #' @export
 #' @name spPCA
@@ -328,12 +330,16 @@ setMethod(
   object,
   ntop = 500,
   exprs_values = "norm.data",
+  log2.transform = TRUE,
   ...
 ) {
   if (exprs_values == "norm.data") {
     input.data <- as.matrix(object@norm.data)
   } else if (exprs_values == "exprs") {
     input.data <- as.matrix(object@expr)
+  }
+  if (log2.transform) {
+    input.data <- log2(input.data)
   }
   high.genes <- names(sort(apply(input.data, 1, var), decreasing = T)[1:ntop])
   input.data <- input.data[high.genes, ]
@@ -375,20 +381,31 @@ setMethod(
   all.coords <- object@coordinates
   expr <- as.matrix(object@expr)
   selection.list <- lapply(1:length(reps), function(i) {
+    # Select replicate subset
     expr.subset <- expr[, all.coords$replicate == reps[i]]
+    # Select replicate coordinates
     coords <- all.coords[all.coords$replicate == reps[i], 2:3]
+    # Create character vector of selected coordinates
     spots <- paste(round(coords[, 1]), round(coords[, 2]), sep = "x")
+    # Read alignment table
     alignment <- read.table(selection.files[[i]], header = T)
     if (ncol(alignment) == 7) {
       alignment <- alignment[alignment[, 7] == 1, ]
     }
+    # Create character vector of spots under tissue
     alignment.spots <- paste(alignment$x, alignment$y, sep = "x")
+    # Sanity check
     stopifnot(sum(alignment.spots %in% spots) == sum(spots %in% alignment.spots))
+    # Intersecting spots
     intersecting.spots <- which(alignment.spots %in% spots)
 
+    # Select iondices for spots under tissue
     spot_indices <- which(spots %in% alignment.spots)
+    # Create subset of input matrix with spots under tissue
     subset_expr <- expr.subset[, spot_indices]
+    # Subset alignment table with intersecting spots
     alignment <- alignment[intersecting.spots, ]
+    # Create dictionary of new coordinates
     new.spots <- paste(reps[i], round(alignment$new_x, digits = 2), round(alignment$new_y, digits = 2), sep = delimiter)
     names(new.spots) <- paste(reps[i], round(alignment$x, digits = 2), round(alignment$y, digits = 2), sep = delimiter)
     colnames(subset_expr) <- new.spots[colnames(subset_expr)]
